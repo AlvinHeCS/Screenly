@@ -1,0 +1,29 @@
+{
+  "name": "@screenly/auth",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@auth/prisma-adapter": "^2.7.4",
+    "@screenly/db": "workspace:*",
+    "next-auth": "5.0.0-beta.25"
+  },
+  "peerDependencies": {
+    "next": "^15.2.3",
+    "react": "^19.0.0"
+  },
+  "devDependencies": {
+    "@screenly/tsconfig": "workspace:*",
+    "@types/node": "^20.14.10",
+    "@types/react": "^19.0.0",
+    "next": "^15.2.3",
+    "react": "^19.0.0",
+    "typescript": "^5.8.2"
+  }
+}
