@@ -1,0 +1,213 @@
+// Screenly Prisma schema — generated client lives in packages/db/generated/client
+// Docs: https://pris.ly/d/prisma-schema
+
+generator client {
+    provider = "prisma-client-js"
+    output   = "../generated/client"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Auth.js (NextAuth v5) models — database session strategy
+// ─────────────────────────────────────────────────────────────────────────────
+
+model User {
+    id            String    @id @default(cuid())
+    name          String?
+    email         String?   @unique
+    emailVerified DateTime?
+    image         String?
+    createdAt     DateTime  @default(now())
+
+    accounts    Account[]
+    sessions    Session[]
+    memberships Membership[]
+    videos      Video[]      @relation("VideoOwner")
+    comments    Comment[]
+}
+
+model Account {
+    id                       String  @id @default(cuid())
+    userId                   String
+    type                     String
+    provider                 String
+    providerAccountId        String
+    refresh_token            String?
+    access_token             String?
+    expires_at               Int?
+    token_type               String?
+    scope                    String?
+    id_token                 String?
+    session_state            String?
+    refresh_token_expires_in Int?
+
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@unique([provider, providerAccountId])
+    @@index([userId])
+}
+
+model Session {
+    id           String   @id @default(cuid())
+    sessionToken String   @unique
+    userId       String
+    expires      DateTime
+
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@index([userId])
+}
+
+model VerificationToken {
+    identifier String
+    token      String
+    expires    DateTime
+
+    @@unique([identifier, token])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Screenly domain models
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum WorkspaceType {
+    PERSONAL
+    TEAM
+}
+
+enum Role {
+    OWNER
+    ADMIN
+    MEMBER
+    VIEWER
+}
+
+enum VideoStatus {
+    UPLOADING
+    PROCESSING
+    READY
+    ERRORED
+    DELETED
+}
+
+enum Visibility {
+    LINK // public-by-unguessable-slug (MVP default)
+    PASSWORD
+    WORKSPACE
+    PRIVATE
+}
+
+enum CaptureMode {
+    SCREEN
+    CAMERA
+    BOTH
+}
+
+model Workspace {
+    id               String        @id @default(cuid())
+    name             String
+    type             WorkspaceType @default(PERSONAL)
+    planId           String        @default("free")
+    stripeCustomerId String?
+    createdAt        DateTime      @default(now())
+    updatedAt        DateTime      @updatedAt
+
+    members Membership[]
+    videos  Video[]
+    folders Folder[]
+}
+
+model Membership {
+    id          String   @id @default(cuid())
+    userId      String
+    workspaceId String
+    role        Role     @default(OWNER)
+    createdAt   DateTime @default(now())
+
+    user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+    workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+    @@unique([userId, workspaceId])
+    @@index([workspaceId])
+    @@index([userId])
+}
+
+model Folder {
+    id          String   @id @default(cuid())
+    name        String
+    workspaceId String
+    createdAt   DateTime @default(now())
+
+    workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+    videos    Video[]
+
+    @@index([workspaceId])
+}
+
+model Video {
+    id            String      @id @default(cuid())
+    slug          String      @unique @default(cuid()) // public /v/{slug} route param
+    cloudflareUid String?     @unique // Cloudflare Stream asset id (source of truth for media)
+    status        VideoStatus @default(UPLOADING)
+    title         String      @default("Untitled recording")
+    description   String?
+    durationSec   Int?
+    thumbnailUrl  String?
+    mode          CaptureMode @default(SCREEN)
+    visibility    Visibility  @default(LINK)
+    passwordHash  String?
+    allowDownload Boolean     @default(true)
+    allowComments Boolean     @default(true)
+    ownerId       String
+    workspaceId   String
+    folderId      String?
+    createdAt     DateTime    @default(now())
+    updatedAt     DateTime    @updatedAt
+
+    owner     User      @relation("VideoOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+    workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+    folder    Folder?   @relation(fields: [folderId], references: [id], onDelete: SetNull)
+    comments  Comment[]
+    views     View[]
+
+    @@index([workspaceId])
+    @@index([ownerId])
+    @@index([folderId])
+}
+
+model Comment {
+    id          String   @id @default(cuid())
+    videoId     String
+    authorId    String?
+    guestName   String?
+    body        String
+    timestampMs Int? // anchor point on the video timeline
+    parentId    String?
+    createdAt   DateTime @default(now())
+
+    video   Video     @relation(fields: [videoId], references: [id], onDelete: Cascade)
+    author  User?     @relation(fields: [authorId], references: [id], onDelete: SetNull)
+    parent  Comment?  @relation("CommentThread", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+    replies Comment[] @relation("CommentThread")
+
+    @@index([videoId])
+    @@index([parentId])
+}
+
+model View {
+    id         String   @id @default(cuid())
+    videoId    String
+    viewerUuid String // anonymous viewer cookie id
+    userId     String?
+    watchedSec Int?
+    createdAt  DateTime @default(now())
+
+    video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+    @@index([videoId])
+    @@index([viewerUuid])
+}
