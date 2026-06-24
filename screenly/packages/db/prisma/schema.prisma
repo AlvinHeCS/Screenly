@@ -7,8 +7,11 @@ generator client {
 }
 
 datasource db {
-    provider = "postgresql"
-    url      = env("DATABASE_URL")
+    provider  = "postgresql"
+    // App runtime: pooled (transaction-mode) connection — survives serverless fan-out.
+    url       = env("DATABASE_URL")
+    // Migrations: session-mode connection — needed for advisory locks + DDL.
+    directUrl = env("DIRECT_URL")
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
