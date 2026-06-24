@@ -10,6 +10,8 @@ export const env = createEnv({
    */
   server: {
     DATABASE_URL: z.string().url(),
+    // Session-mode connection used only by `prisma migrate` / `db push`.
+    DIRECT_URL: z.string().url(),
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
@@ -42,6 +44,7 @@ export const env = createEnv({
    */
   runtimeEnv: {
     DATABASE_URL: process.env.DATABASE_URL,
+    DIRECT_URL: process.env.DIRECT_URL,
     NODE_ENV: process.env.NODE_ENV,
     AUTH_SECRET: process.env.AUTH_SECRET,
     AUTH_GOOGLE_ID: process.env.AUTH_GOOGLE_ID,
