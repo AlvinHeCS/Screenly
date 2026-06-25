@@ -1,0 +1,16 @@
+interface ScreenWindowIconProps {
+  className?: string;
+}
+
+export function ScreenWindowIcon({ className }: ScreenWindowIconProps) {
+  return (
+    <svg fill="none" viewBox="0 0 16 16" role="presentation" className={className}>
+      <path
+        fill="currentcolor"
+        fillRule="evenodd"
+        d="M1 3a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2zm2-.5a.5.5 0 0 0-.5.5v4.25h4.75V2.5zm5.75 0v4.75h4.75V3a.5.5 0 0 0-.5-.5zm4.75 6.25H8.75v4.75H13a.5.5 0 0 0 .5-.5zM7.25 13.5V8.75H2.5V13a.5.5 0 0 0 .5.5z"
+        clipRule="evenodd"
+      />
+    </svg>
+  );
+}
