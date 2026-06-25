@@ -1,0 +1,21 @@
+interface LinkIconProps {
+  className?: string;
+}
+
+export function LinkIcon({ className }: LinkIconProps) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 16 16"
+      role="presentation"
+    >
+      <path
+        fill="currentColor"
+        fillRule="evenodd"
+        d="M8.22 2.22a3.932 3.932 0 1 1 5.56 5.56l-2.25 2.25-1.06-1.06 2.25-2.25a2.432 2.432 0 0 0-3.44-3.44L7.03 5.53 5.97 4.47zm3.06 3.56-5.5 5.5-1.06-1.06 5.5-5.5zM2.22 8.22l2.25-2.25 1.06 1.06-2.25 2.25a2.432 2.432 0 0 0 3.44 3.44l2.25-2.25 1.06 1.06-2.25 2.25a3.932 3.932 0 1 1-5.56-5.56"
+        clipRule="evenodd"
+      ></path>
+    </svg>
+  );
+}

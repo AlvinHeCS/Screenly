@@ -3,9 +3,11 @@ import { redirect } from "next/navigation";
 import { auth } from "@screenly/auth";
 
 import { Header } from "~/app/_components/header/Header";
+import { LibraryView } from "~/app/_components/library/LibraryView";
 import { RecorderOverlay } from "~/app/_components/recorder/RecorderOverlay";
 import { RecorderProvider } from "~/app/_components/recorder/RecorderProvider";
 import { Sidebar } from "~/app/_components/sidebar/Sidebar";
+import { api } from "~/trpc/server";
 
 export default async function VideosPage() {
   const session = await auth();
@@ -15,22 +17,23 @@ export default async function VideosPage() {
     redirect("/");
   }
 
+  // The video collection — newest first, scoped to the caller's workspace.
+  // Returns [] when the user has no videos/workspace, which renders the empty state.
+  const videos = await api.video.list();
+
   return (
     <RecorderProvider>
       <div className="flex h-screen overflow-hidden bg-white">
         <Sidebar />
         <div className="flex min-w-0 flex-1 flex-col overflow-y-auto">
           <Header />
+          {/* mainContentSection — `--pagePadding` is read by the tab bar's
+              negative-margin bleed in LibraryTabs; 24px horizontal gutter. */}
           <main
             id="mainContent"
-            className="mx-auto w-full max-w-[780px] px-[16px] py-[24px]"
+            className="w-full px-[24px] py-[24px] [--pagePadding:24px]"
           >
-            <h1 className="text-[24px] font-[653] leading-[1.16] tracking-[-0.2px] text-[hsla(228,6%,17%,1)]">
-              Videos
-            </h1>
-            <p className="mt-[8px] text-[14px] leading-[1.57] text-[hsla(224,5%,44%,1)]">
-              Your recorded Looms will show up here.
-            </p>
+            <LibraryView videos={videos} />
           </main>
         </div>
       </div>
