@@ -1,28 +1,33 @@
 import Link from "next/link";
 
 import { CollapseSidebarIcon } from "./icons/CollapseSidebarIcon";
-import { LoomLogoIcon } from "./icons/LoomLogoIcon";
+import { ScreenlyLogoIcon } from "./icons/ScreenlyLogoIcon";
 
 /**
- * Sidebar header row: the Loom wordmark and the collapse-sidebar button.
+ * Sidebar header row: the Screenly wordmark and the collapse-sidebar button.
  *
  * Layout/sizing all resolved from `loom_style_guide.css`: `css-trha3p` (grid,
  * align-items:center, justify-content:space-between, grid-auto-flow:column,
- * gap 8px), `css-n7wfxh` (width 106.67px, margin-left 8px), `css-c24b6e`
- * (block, max-width 88px), `css-nez7wg` (inline-block, vertical-align middle),
- * `css-1c39lxe` (24×24 icon button, rounded 4px, transparent, transition
- * background-color 0.6s) and `css-1y53iih` (block, colour body). The collapse
- * icon renders at the wrapper's `size="2.25"` (18px).
+ * gap 8px), `css-n7wfxh` (width 106.67px, margin-left 8px), `css-nez7wg`
+ * (inline-block, vertical-align middle), `css-1c39lxe` (24×24 icon button,
+ * rounded 4px, transparent, transition background-color 0.6s) and
+ * `css-1y53iih` (block, colour body). The brand mark renders at 24px next to
+ * the "Screenly" wordmark; the collapse icon renders at the wrapper's
+ * `size="2.25"` (18px).
  */
 export function SidebarHeader() {
   return (
     <div className="grid grid-flow-col items-center justify-between gap-[8px]">
       {/* css-n7wfxh */}
       <div className="ml-[8px] w-[106.67px]">
-        <Link href="/" aria-label="Loom home">
-          {/* css-c24b6e */}
-          <span className="block max-w-[88px]">
-            <LoomLogoIcon className="block h-full w-full max-w-[88px]" />
+        <Link
+          href="/"
+          aria-label="Screenly home"
+          className="flex items-center gap-[6px]"
+        >
+          <ScreenlyLogoIcon className="block h-[24px] w-[24px] shrink-0" />
+          <span className="text-[18px] font-semibold leading-none tracking-[-0.01em] text-[#292a2e]">
+            Screenly
           </span>
         </Link>
       </div>
