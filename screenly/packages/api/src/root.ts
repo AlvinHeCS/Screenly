@@ -1,5 +1,6 @@
 import { authRouter } from "./router/auth";
 import { healthRouter } from "./router/health";
+import { videoRouter } from "./router/video";
 import { createCallerFactory, createTRPCRouter } from "./trpc";
 
 /**
@@ -9,6 +10,7 @@ import { createCallerFactory, createTRPCRouter } from "./trpc";
 export const appRouter = createTRPCRouter({
   health: healthRouter,
   auth: authRouter,
+  video: videoRouter,
 });
 
 export type AppRouter = typeof appRouter;
