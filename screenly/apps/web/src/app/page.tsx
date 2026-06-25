@@ -37,7 +37,10 @@ export default async function Home() {
           <form
             action={async () => {
               "use server";
-              await signIn("google");
+              // New + returning users land on their videos dashboard after
+              // authenticating. `redirectTo` is Auth.js v5's callbackUrl; a
+              // relative path keeps it same-origin (Auth.js rejects others).
+              await signIn("google", { redirectTo: "/videos" });
             }}
           >
             <button className="rounded-full bg-white/10 px-8 py-3 font-semibold transition hover:bg-white/20">
