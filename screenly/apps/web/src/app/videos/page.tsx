@@ -1,6 +1,17 @@
+import { redirect } from "next/navigation";
+
+import { auth } from "@screenly/auth";
+
 import { Header } from "~/app/_components/header/Header";
 
-export default function VideosPage() {
+export default async function VideosPage() {
+  const session = await auth();
+
+  // Guard the route: anyone not signed in gets bounced to the marketing page.
+  if (!session?.user) {
+    redirect("/");
+  }
+
   return (
     <div className="min-h-screen bg-white">
       <Header />
