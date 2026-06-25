@@ -1,3 +1,7 @@
+"use client";
+
+import { useProfileMenu } from "../profile-menu/ProfileMenuContext";
+
 interface ProfileAvatarProps {
   name?: string;
   src?: string;
@@ -14,19 +18,24 @@ const DEFAULT_AVATAR =
  * `button.profile-bubble_avatarLink_yHP` base class was external (only its
  * inline `z-index: 3` was available), so the button is reconstructed as a
  * round, borderless, transparent clickable wrapper at `z-[3]`.
+ *
+ * Pressing it toggles the profile popover via `useProfileMenu()` (the
+ * `ProfileMenuProvider` mounted on the `/videos` page).
  */
 export function ProfileAvatar({
   name = "Alvin",
   src = DEFAULT_AVATAR,
 }: ProfileAvatarProps) {
+  const { isOpen, toggle } = useProfileMenu();
+
   return (
-    <div
-      id="intercom-destination-avatar"
-      className="relative rounded-full"
-    >
+    <div id="intercom-destination-avatar" className="relative rounded-full">
       <div className="inline-block align-middle">
         <button
           aria-label={`Account menu for ${name}`}
+          aria-haspopup="dialog"
+          aria-expanded={isOpen}
+          onClick={toggle}
           className="relative z-[3] block cursor-pointer rounded-full border-none bg-transparent p-0"
         >
           <span className="relative z-0 flex h-[36px] w-[36px] items-center justify-center overflow-hidden rounded-full bg-white text-[18px] font-[653] leading-none text-[hsla(216.3,69.2%,23%,1)]">
