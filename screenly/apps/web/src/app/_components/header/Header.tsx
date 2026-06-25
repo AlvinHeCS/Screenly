@@ -13,12 +13,11 @@ import { VideoUsageMeter } from "./VideoUsageMeter";
  * their layout is reconstructed from the self-describing utility classes on
  * the markup (`sticky top:0 bgc:background`, `py:small md:py:medium`,
  * `items:center flex`, `shrink:0`, `pl:medium`, `ml:medium`) plus the resolved
- * `--lns-*` design tokens. A bottom border (`--lns-color-border`) is added so
- * the bar reads as a header. Drop it onto any page above the main content.
+ * `--lns-*` design tokens. Drop it onto any page above the main content.
  */
 export function Header() {
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-[hsla(225.5,57%,10%,0.14)] bg-white">
+    <header className="sticky top-0 z-50 w-full bg-white">
       <div>
         <SkipNavigation />
         <ul className="flex w-full items-center px-[16px]">
