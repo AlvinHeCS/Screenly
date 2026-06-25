@@ -1,8 +1,12 @@
+"use client";
+
+import { useRecorder } from "../recorder/RecorderContext";
 import { RecordLogoIcon } from "./icons/RecordLogoIcon";
 
 /**
  * The persistent "Record a video" call-to-action pinned to the bottom of the
- * sidebar (`record-button_persistentRecordButton_VJT`).
+ * sidebar (`record-button_persistentRecordButton_VJT`). Pressing it opens the
+ * recorder overlay via `useRecorder()`.
  *
  * The button styling is taken verbatim from the captured matched-CSS for that
  * class, with `var(--…)` resolved from the design-token table:
@@ -21,12 +25,16 @@ import { RecordLogoIcon } from "./icons/RecordLogoIcon";
  * `css-1iwdxph` logo (max-width 24px) and the `css-1xi9xlt` label (14px/medium).
  */
 export function RecordButton() {
+  const { open } = useRecorder();
+
   return (
     <div className="flex grow flex-col justify-end pl-0">
       {/* css-1i2wqfo */}
       <div className="relative left-[-8px] pb-[12px] pt-[8px]">
         <button
           id="LoomRecordAVideoButton"
+          type="button"
+          onClick={open}
           className="m-0 box-border flex h-[48px] max-w-[192px] cursor-pointer items-center overflow-hidden rounded-r-[12px] bg-[hsla(215.4,80%,47.65%,1)] px-[16px] text-white shadow-[0_6px_24px_rgba(0,0,0,0.1)] outline-[hsla(216.1,81.4%,60%,1)] transition-[max-width] duration-300"
         >
           {/* navigation_root_mPG */}
