@@ -2,6 +2,7 @@ import type { LibraryVideo } from "./types";
 import { LibraryFilterBar } from "./LibraryFilterBar";
 import { LibraryHeader } from "./LibraryHeader";
 import { LibraryTabs } from "./LibraryTabs";
+import { ProcessingWatcher } from "./ProcessingWatcher";
 import { VideoGrid } from "./VideoGrid";
 
 /**
@@ -24,8 +25,15 @@ import { VideoGrid } from "./VideoGrid";
  * not record; reconstructed as a plain `block` section wrapper.
  */
 export function LibraryView({ videos }: { videos: LibraryVideo[] }) {
+  // Videos still encoding on Cloudflare — polled client-side so they flip to
+  // Ready without a manual refresh (dev fallback for the Stream webhook).
+  const pendingIds = videos
+    .filter((v) => v.status === "UPLOADING" || v.status === "PROCESSING")
+    .map((v) => v.id);
+
   return (
     <>
+      <ProcessingWatcher idsKey={pendingIds.join(",")} />
       {/* css-1c4s23w (A) — reconstructed block section wrapper; decorative spacer row. */}
       <div className="block">
         <div>

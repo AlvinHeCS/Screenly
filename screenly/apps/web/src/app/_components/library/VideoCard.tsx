@@ -77,6 +77,19 @@ export function VideoCard({ video }: VideoCardProps) {
               <VideoCardHoverActions videoId={video.id} title={video.title} />
             </div>
           </div>
+
+          {/* Pipeline overlay while the upload is still encoding on Cloudflare. */}
+          {video.status !== "READY" && (
+            <div className="absolute inset-0 flex items-center justify-center bg-[hsla(240,3%,12.5%,0.7)]">
+              <span className="rounded-[6px] bg-[hsla(0,0%,100%,0.14)] px-[10px] py-[4px] text-[12px] font-medium text-white">
+                {video.status === "ERRORED"
+                  ? "Upload failed"
+                  : video.status === "UPLOADING"
+                    ? "Uploading…"
+                    : "Processing…"}
+              </span>
+            </div>
+          )}
         </div>
 
         {duration && (

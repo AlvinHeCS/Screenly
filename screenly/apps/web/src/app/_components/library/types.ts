@@ -5,11 +5,25 @@
  */
 export type LibraryVisibility = "LINK" | "PASSWORD" | "WORKSPACE" | "PRIVATE";
 
+/**
+ * Mirrors the Prisma `VideoStatus` enum (so the `video.list` output stays
+ * assignable). DELETED rows are filtered out by the query, so a card never
+ * renders one in practice.
+ */
+export type LibraryVideoStatus =
+  | "UPLOADING"
+  | "PROCESSING"
+  | "READY"
+  | "ERRORED"
+  | "DELETED";
+
 export interface LibraryVideo {
   id: string;
   /** Public share route param (/v/{slug}). */
   slug: string;
   title: string;
+  /** Cloudflare pipeline state; non-READY rows show a status overlay. */
+  status: LibraryVideoStatus;
   durationSec: number | null;
   thumbnailUrl: string | null;
   visibility: LibraryVisibility;
