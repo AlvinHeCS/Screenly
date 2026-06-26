@@ -3,7 +3,9 @@
 import { useEffect, useRef } from "react";
 
 import { CameraBubble } from "./CameraBubble";
+import { CountdownOverlay } from "./CountdownOverlay";
 import { PreRecordingPanel } from "./PreRecordingPanel";
+import { ReviewPanel } from "./ReviewPanel";
 import { RecordingControls } from "./RecordingControls";
 import { useRecorder } from "./RecorderContext";
 
@@ -11,43 +13,54 @@ const FOCUSABLE =
   'button:not([disabled]), [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
 /**
- * Full-screen layer shown when the "Record a video" button is pressed. Ports
- * Loom's recorder extension UI: a dimmed backdrop, the pre-recording options
- * panel (modal), the draggable camera bubble, and the (pre-recording, disabled)
- * recording-controls rail.
+ * Full-screen layer shown while the recorder is open. Renders by phase:
+ *  - preview:   dimmed backdrop + options panel (top-right) + camera bubble
+ *  - countdown: 3-2-1 overlay + camera bubble (Esc cancels back to preview)
+ *  - recording/paused: controls rail + camera bubble (no backdrop)
+ *  - review:    backdrop + playback/download panel
  *
- * The recorder markup uses the Chrome extension's own emotion classes
- * (`content-*`, `bubble-controls-*`) which are NOT present in
- * `loom_style_guide.css`, so the shell layout is reconstructed from the resolved
- * icon/text classes plus the `--lns-*` design tokens (record red
+ * Modal phases (preview, review) trap Tab and take initial focus; Escape closes
+ * them. During recording Escape is ignored so it can't accidentally end a take.
+ * Ports Loom's recorder shell using the `--lns-*` tokens (record red
  * `hsla(11.2,100%,58%,1)`, blurple `hsla(215.4,80%,47.65%,1)`, body
- * `hsla(228,6%,17%,1)`, backdrop `hsla(224,72%,7%,0.46)`, border
- * `hsla(225.5,57%,10%,0.14)`).
+ * `hsla(228,6%,17%,1)`, backdrop `hsla(224,72%,7%,0.46)`).
  */
 export function RecorderOverlay() {
-  const { isOpen, close } = useRecorder();
+  const { phase, close, cancelCountdown } = useRecorder();
   const panelRef = useRef<HTMLDivElement>(null);
 
-  // While open: move focus into the dialog, trap Tab inside the panel, close on
-  // Escape, and restore focus to the trigger on close (aria-modal semantics).
+  const isOpen = phase !== "idle";
+  const isModal = phase === "preview" || phase === "review";
+
+  // Restore focus to the trigger only when the overlay fully closes.
+  useEffect(() => {
+    if (!isOpen) return;
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    return () => previouslyFocused?.focus?.();
+  }, [isOpen]);
+
+  // Per-phase keyboard handling: initial focus + Tab trap for modal phases,
+  // and a phase-aware Escape.
   useEffect(() => {
     if (!isOpen) return;
 
-    const previouslyFocused = document.activeElement as HTMLElement | null;
-
     const getFocusable = () =>
-      Array.from(panelRef.current?.querySelectorAll<HTMLElement>(FOCUSABLE) ?? []);
+      Array.from(
+        panelRef.current?.querySelectorAll<HTMLElement>(FOCUSABLE) ?? [],
+      );
 
-    // Move focus into the panel once it has mounted.
-    const focusable = getFocusable();
-    (focusable[0] ?? panelRef.current)?.focus();
+    if (isModal) {
+      const focusable = getFocusable();
+      (focusable[0] ?? panelRef.current)?.focus();
+    }
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        close();
+        if (phase === "countdown") cancelCountdown();
+        else if (isModal) close();
         return;
       }
-      if (event.key !== "Tab") return;
+      if (event.key !== "Tab" || !isModal) return;
 
       const panel = panelRef.current;
       if (!panel) return;
@@ -67,45 +80,62 @@ export function RecorderOverlay() {
         event.preventDefault();
         first.focus();
       } else if (active instanceof Node && !panel.contains(active)) {
-        // Focus escaped the dialog — pull it back in.
         event.preventDefault();
         first.focus();
       }
     };
 
     window.addEventListener("keydown", onKeyDown);
-    return () => {
-      window.removeEventListener("keydown", onKeyDown);
-      previouslyFocused?.focus?.();
-    };
-  }, [isOpen, close]);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [isOpen, isModal, phase, close, cancelCountdown]);
 
   if (!isOpen) return null;
 
+  const showBubble = phase !== "review";
+  const showControls = phase === "recording" || phase === "paused";
+
   return (
-    <div className="fixed inset-0 z-[1000]">
-      {/* Dimmed backdrop — click outside the panel to dismiss. */}
-      <button
-        type="button"
-        tabIndex={-1}
-        aria-label="Close recorder"
-        onClick={close}
-        className="absolute inset-0 h-full w-full cursor-default bg-[hsla(224,72%,7%,0.46)]"
-      />
+    <div className="pointer-events-none fixed inset-0 z-[1000]">
+      {/* Dimmed backdrop on modal phases — click outside to dismiss. The outer
+          wrapper is click-through so non-modal phases (recording/paused) don't
+          block the page; interactive children opt back in with pointer-events-auto. */}
+      {isModal && (
+        <button
+          type="button"
+          tabIndex={-1}
+          aria-label="Close recorder"
+          onClick={close}
+          className="pointer-events-auto absolute inset-0 h-full w-full cursor-default bg-[hsla(224,72%,7%,0.46)]"
+        />
+      )}
 
-      {/* Pre-recording options panel — top right. */}
-      <div
-        ref={panelRef}
-        className="pointer-events-auto absolute right-[32px] top-[32px]"
-      >
-        <PreRecordingPanel onClose={close} />
-      </div>
+      {phase === "preview" && (
+        <div
+          ref={panelRef}
+          className="pointer-events-auto absolute right-[32px] top-[32px]"
+        >
+          <PreRecordingPanel onClose={close} />
+        </div>
+      )}
 
-      {/* Camera bubble bottom-left, with the vertical controls rail above it. */}
-      <div className="pointer-events-none absolute bottom-[32px] left-[32px] flex flex-col items-start gap-[16px]">
-        <RecordingControls />
-        <CameraBubble />
-      </div>
+      {phase === "countdown" && <CountdownOverlay />}
+
+      {phase === "review" && (
+        <div
+          ref={panelRef}
+          className="pointer-events-auto absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+        >
+          <ReviewPanel />
+        </div>
+      )}
+
+      {/* Controls rail + camera bubble, bottom-left. */}
+      {(showControls || showBubble) && (
+        <div className="pointer-events-none absolute bottom-[32px] left-[32px] flex flex-col items-start gap-[16px]">
+          {showControls && <RecordingControls />}
+          {showBubble && <CameraBubble />}
+        </div>
+      )}
     </div>
   );
 }
