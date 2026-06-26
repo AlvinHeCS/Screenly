@@ -1,7 +1,7 @@
 "use client";
 
 import type { SyntheticEvent } from "react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { api } from "~/trpc/react";
@@ -156,6 +156,17 @@ export function ReviewPanel() {
     }
   };
 
+  // Auto-upload: kick the upload off as soon as the recording is ready, so the
+  // user doesn't have to press anything. Closing the panel aborts and discards.
+  const autoStartedRef = useRef(false);
+  useEffect(() => {
+    if (autoStartedRef.current || !recordedBlob) return;
+    autoStartedRef.current = true;
+    void handleUpload();
+    // handleUpload is stable enough for a once-per-mount auto-start.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recordedBlob]);
+
   // Close is always available — during an upload it aborts (which cleans up the
   // reserved row) and then dismisses, so the user is never trapped.
   const handleClose = () => {
@@ -172,7 +183,7 @@ export function ReviewPanel() {
     >
       <div className="flex items-center justify-between px-[16px] py-[12px]">
         <h2 id="recorder-review-title" className="text-[16px] font-semibold">
-          Recording ready
+          {isUploading ? "Uploading to your library…" : "Recording ready"}
         </h2>
         <button
           type="button"
