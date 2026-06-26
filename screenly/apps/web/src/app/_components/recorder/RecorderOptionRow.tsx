@@ -8,25 +8,31 @@ interface RecorderOptionRowProps {
   ariaLabel: string;
   /** When provided, renders an On/Off pill at the end of the row. */
   on?: boolean;
+  /** Toggle/select handler; when `on` is provided this flips the source. */
+  onClick?: () => void;
 }
 
 /**
  * A source-selector row (Window / Camera / Microphone). Reconstructed as a
  * full-width bordered button; the label reuses the resolved body-md type
  * (14px / 1.57 / medium) and the row border uses the `--lns-color-border`
- * token (`hsla(225.5,57%,10%,0.14)`).
+ * token (`hsla(225.5,57%,10%,0.14)`). When it carries an On/Off pill, the whole
+ * row is a toggle (`aria-pressed`).
  */
 export function RecorderOptionRow({
   icon,
   label,
   ariaLabel,
   on,
+  onClick,
 }: RecorderOptionRowProps) {
   return (
     <button
       type="button"
       data-qa="recorder-button"
       aria-label={ariaLabel}
+      aria-pressed={on}
+      onClick={onClick}
       className="flex h-[44px] w-full cursor-pointer items-center gap-[8px] rounded-[8px] border border-[hsla(225.5,57%,10%,0.14)] bg-white px-[12px] text-left text-[hsla(228,6%,17%,1)] transition-colors duration-200 hover:bg-[hsla(209,75.6%,8%,0.08)]"
     >
       <span className="flex shrink-0 items-center text-[hsla(228,6%,17%,1)]">

@@ -1,3 +1,6 @@
+"use client";
+
+import { useRecorder } from "./RecorderContext";
 import { EffectsRow } from "./EffectsRow";
 import { PanelHeader } from "./PanelHeader";
 import { RecorderOptionRow } from "./RecorderOptionRow";
@@ -14,10 +17,21 @@ interface PreRecordingPanelProps {
 /**
  * The pre-recording options dialog (`content-3yh8pl`, 280px wide). Header tabs,
  * the Window / Camera / Microphone source rows, the Start Recording CTA, the
- * recording-limit note, and the effects row. Card chrome (radius, shadow) is
- * reconstructed; the body text/colours come from the resolved tokens.
+ * recording-limit note, and the effects row. The Camera and Microphone rows
+ * toggle their tracks; Start kicks off the screen picker → countdown → capture.
+ * The Window row stays cosmetic: in the browser the OS/Chrome picker (raised by
+ * `getDisplayMedia` on Start) owns screen-source selection.
  */
 export function PreRecordingPanel({ onClose }: PreRecordingPanelProps) {
+  const {
+    cameraOn,
+    micOn,
+    setCameraOn,
+    setMicOn,
+    startRecording,
+    errorMessage,
+  } = useRecorder();
+
   return (
     <div
       role="dialog"
@@ -38,21 +52,32 @@ export function PreRecordingPanel({ onClose }: PreRecordingPanelProps) {
             icon={<ScreenWindowIcon className="h-[16px] w-[16px]" />}
           />
           <RecorderOptionRow
-            ariaLabel="Camera options"
+            ariaLabel="Toggle camera"
             label="MacBook Air Camera (0000:0001)"
             icon={<VideoCameraIcon className="h-[16px] w-[16px]" />}
-            on
+            on={cameraOn}
+            onClick={() => setCameraOn(!cameraOn)}
           />
           <RecorderOptionRow
-            ariaLabel="Microphone options"
+            ariaLabel="Toggle microphone"
             label="MacBook Air Microphone (Built-in)"
             icon={<MicrophoneIcon className="h-[16px] w-[16px]" />}
-            on
+            on={micOn}
+            onClick={() => setMicOn(!micOn)}
           />
         </div>
 
+        {errorMessage ? (
+          <p
+            role="alert"
+            className="mt-[12px] rounded-[8px] bg-[hsla(11.2,100%,58%,0.1)] px-[12px] py-[8px] text-[12px] font-medium text-[hsla(11.2,100%,40%,1)]"
+          >
+            {errorMessage}
+          </p>
+        ) : null}
+
         <div className="mt-[12px]">
-          <StartRecordingButton />
+          <StartRecordingButton onClick={startRecording} />
         </div>
 
         <div className="mt-[8px]">

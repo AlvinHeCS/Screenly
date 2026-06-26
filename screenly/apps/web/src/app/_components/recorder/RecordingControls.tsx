@@ -1,4 +1,8 @@
+"use client";
+
+import { useRecorder } from "./RecorderContext";
 import { PauseIcon } from "./icons/PauseIcon";
+import { PlayIcon } from "./icons/PlayIcon";
 import { RestartIcon } from "./icons/RestartIcon";
 import { RewindTrimIcon } from "./icons/RewindTrimIcon";
 import { StopSquareIcon } from "./icons/StopSquareIcon";
@@ -6,31 +10,38 @@ import { TrashIcon } from "./icons/TrashIcon";
 
 /**
  * The recorder controls rail (Loom's extension `bubble-controls-*` markup),
- * shown beside the camera bubble. Captured in the pre-recording state: every
- * control is disabled and the timer shows the 5:00 limit.
+ * shown beside the camera bubble while recording or paused. Stop, Pause/Resume,
+ * Restart and Cancel are wired to the recorder engine; the timer counts up
+ * elapsed recorded time (frozen while paused). Rewind/Trim stays disabled
+ * (editing is out of scope).
  *
- * RESOLVED from `loom_style_guide.css` tokens + inline styles + ADS attrs:
- *  - surface `bgc:grey8` → hsla(228,6%,17%,1)
- *  - padding `pt/pb:small` (--lns-space-small) → py-[8px]; inline
- *    `padding-right:6px` → px-[6px]
- *  - `radius="250"` (--lns-radius-250 → --ds-radius-xxlarge) → rounded-[16px]
- *  - timer `color="bodyDimmed"` (dark) → hsla(217.5,4%,60.4%,1), bold, sans
- *  - buttons `color="disabledContent"` (dark) → hsla(225,5%,33%,1)
- *  - `size="3"` icons → 16px; divider spacer inline → w-[28px] h-[1px]
- *
- * RECONSTRUCTED (best-effort, not pixel-exact): the `bubble-controls-*`
- * structural classes and the ADS atomic classes (`_1e0c1o8l`, …) are generated
- * in Loom's extension bundle and are absent from `loom_style_guide.css`, so the
- * following are reasonable choices, not measured values:
- *  - vertical layout, 10px gaps, 28×28 buttons, drop shadow
- *  - the timer's focusable wrapper (tabIndex 0) and 12px font-size
- *  - the divider colour (faint white) between Cancel and Rewind
- *  - the empty End-button badge slot (`bubble-controls-vgmi1o`) is omitted
- * Page placement stays owned by RecorderOverlay, not the inline absolute pos.
+ * Styling RESOLVED from `loom_style_guide.css` tokens + inline styles + ADS
+ * attrs (surface grey8, radius-250, bodyDimmed bold timer, 16px icons); the
+ * `bubble-controls-*` structural classes are absent from the captured CSS, so
+ * the vertical layout / 28×28 buttons / shadow are best-effort reconstructions.
+ * Page placement stays owned by RecorderOverlay.
  */
 export function RecordingControls() {
+  const {
+    phase,
+    elapsedSec,
+    stopRecording,
+    pauseRecording,
+    resumeRecording,
+    restartRecording,
+    cancelRecording,
+  } = useRecorder();
+
+  const isPaused = phase === "paused";
+
   const buttonClass =
+    "inline-flex h-[28px] w-[28px] cursor-pointer items-center justify-center rounded-[6px] bg-transparent p-0 text-white transition-colors duration-200 hover:bg-[hsla(0,0%,100%,0.1)]";
+  const disabledClass =
     "inline-flex h-[28px] w-[28px] cursor-not-allowed items-center justify-center bg-transparent p-0 text-[hsla(225,5%,33%,1)]";
+
+  const minutes = Math.floor(elapsedSec / 60);
+  const seconds = elapsedSec % 60;
+  const timeLabel = `${minutes}:${seconds.toString().padStart(2, "0")}`;
 
   return (
     <div
@@ -38,49 +49,67 @@ export function RecordingControls() {
       aria-label="Recorder controls"
       className="pointer-events-auto flex flex-col items-center gap-[10px] rounded-[16px] bg-[hsla(228,6%,17%,1)] px-[6px] py-[8px] text-white shadow-[0_6px_24px_rgba(0,0,0,0.25)]"
     >
-      {/* End/record — the distinct primary control (`bubble-controls-1y9t1qa`),
-          dimmed while pre-recording. */}
+      {/* End/record — the distinct primary control. */}
       <button
         type="button"
-        disabled
         aria-label="End Recording"
         data-testid="start-finish-button"
-        className={buttonClass}
+        onClick={stopRecording}
+        className="inline-flex h-[28px] w-[28px] cursor-pointer items-center justify-center rounded-[6px] bg-transparent p-0 text-[hsla(11.2,100%,58%,1)] transition-colors duration-200 hover:bg-[hsla(0,0%,100%,0.1)]"
       >
         <StopSquareIcon className="h-[16px] w-[16px]" />
       </button>
 
-      {/* Limit countdown — focusable in the original (tabIndex 0); bodyDimmed bold text. */}
+      {/* Elapsed recorded time (counts up; frozen while paused). */}
       <div
         tabIndex={0}
+        aria-label={`Elapsed time ${timeLabel}`}
         className="cursor-default select-none rounded-[6px] font-[sans-serif] text-[12px] font-bold text-[hsla(217.5,4%,60.4%,1)] outline-none focus-visible:ring-1 focus-visible:ring-[hsla(0,0%,100%,0.3)]"
       >
-        5:00
+        {timeLabel}
       </div>
 
-      <button type="button" disabled aria-label="Pause Recording" className={buttonClass}>
-        <PauseIcon className="h-[16px] w-[16px]" />
+      <button
+        type="button"
+        aria-label={isPaused ? "Resume Recording" : "Pause Recording"}
+        onClick={isPaused ? resumeRecording : pauseRecording}
+        className={buttonClass}
+      >
+        {isPaused ? (
+          <PlayIcon className="h-[16px] w-[16px]" />
+        ) : (
+          <PauseIcon className="h-[16px] w-[16px]" />
+        )}
       </button>
 
-      <button type="button" disabled aria-label="Restart Recording" className={buttonClass}>
+      <button
+        type="button"
+        aria-label="Restart Recording"
+        onClick={restartRecording}
+        className={buttonClass}
+      >
         <RestartIcon className="h-[16px] w-[16px]" />
       </button>
 
       <button
         type="button"
-        disabled
         aria-label="Cancel Recording"
         data-testid="cancel-button"
+        onClick={cancelRecording}
         className={buttonClass}
       >
         <TrashIcon className="h-[16px] w-[16px]" />
       </button>
 
-      {/* Divider separating Rewind/Trim from the group above
-          (`bubble-controls-13h9i8a`, 28×1px). */}
+      {/* Divider separating Rewind/Trim (disabled — editing is out of scope). */}
       <div className="h-[1px] w-[28px] bg-[hsla(0,0%,100%,0.1)]" />
 
-      <button type="button" disabled aria-label="Rewind and Trim Recording" className={buttonClass}>
+      <button
+        type="button"
+        disabled
+        aria-label="Rewind and Trim Recording"
+        className={disabledClass}
+      >
         <RewindTrimIcon className="h-[16px] w-[16px]" />
       </button>
     </div>
