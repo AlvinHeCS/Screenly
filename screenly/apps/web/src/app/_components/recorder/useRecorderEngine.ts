@@ -53,6 +53,8 @@ export interface RecorderEngine {
   recordedUrl: string | null;
   /** MIME type of the finished recording, for choosing a download extension. */
   recordedType: string | null;
+  /** The finished recording Blob (for upload), else null. */
+  recordedBlob: Blob | null;
   /** User-facing error (e.g. screen-share declined). */
   errorMessage: string | null;
 }
@@ -146,6 +148,7 @@ export function useRecorderEngine(): RecorderEngine {
   const [countdownValue, setCountdownValue] = useState(0);
   const [recordedUrl, setRecordedUrl] = useState<string | null>(null);
   const [recordedType, setRecordedType] = useState<string | null>(null);
+  const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Mirrors of render state read inside async callbacks / the draw loop, so they
@@ -443,6 +446,7 @@ export function useRecorderEngine(): RecorderEngine {
     chunksRef.current = [];
     setRecordedUrl(url);
     setRecordedType(type);
+    setRecordedBlob(blob);
     goPhase("review");
     teardownCapture();
     stopCamera();
@@ -562,6 +566,7 @@ export function useRecorderEngine(): RecorderEngine {
     revokeRecordedUrl();
     setRecordedUrl(null);
     setRecordedType(null);
+    setRecordedBlob(null);
     setErrorMessage(null);
     setCameraError(false);
     setElapsedSec(0);
@@ -580,6 +585,7 @@ export function useRecorderEngine(): RecorderEngine {
     revokeRecordedUrl();
     setRecordedUrl(null);
     setRecordedType(null);
+    setRecordedBlob(null);
     setErrorMessage(null);
     setCameraError(false);
     setElapsedSec(0);
@@ -839,6 +845,7 @@ export function useRecorderEngine(): RecorderEngine {
       countdownValue,
       recordedUrl,
       recordedType,
+      recordedBlob,
       errorMessage,
     }),
     [
@@ -862,6 +869,7 @@ export function useRecorderEngine(): RecorderEngine {
       countdownValue,
       recordedUrl,
       recordedType,
+      recordedBlob,
       errorMessage,
     ],
   );

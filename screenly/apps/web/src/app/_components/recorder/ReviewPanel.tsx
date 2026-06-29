@@ -1,21 +1,56 @@
 "use client";
 
 import type { SyntheticEvent } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 
+import { api } from "~/trpc/react";
 import { useRecorder } from "./RecorderContext";
 import { CloseIcon } from "./icons/CloseIcon";
 
+type UploadState = "idle" | "uploading" | "error";
+
+// Cloudflare's direct-creator-upload single POST is capped at 200 MB; larger
+// recordings need the resumable (tus) path, which is a follow-up.
+const MAX_UPLOAD_BYTES = 200 * 1024 * 1024;
+
 /**
- * Shown once recording stops: a playback preview of the composited WebM plus a
- * Download action. Upload to Cloudflare Stream is the next task, so that button
- * is present but disabled. "Record another" / Close discards the take and
- * returns to idle.
+ * Shown once recording stops: a playback preview of the composited WebM, a
+ * Download action, and an Upload action that pushes the recording to Cloudflare
+ * Stream and returns the user to the library (where it appears as Processing,
+ * then Ready). Upload is resumable across retries and cancellable; a failed or
+ * cancelled attempt marks the reserved row failed rather than orphaning it.
  */
 export function ReviewPanel() {
-  const { recordedUrl, recordedType, close, open } = useRecorder();
+  const {
+    recordedUrl,
+    recordedType,
+    recordedBlob,
+    elapsedSec,
+    cameraOn,
+    close,
+    open,
+  } = useRecorder();
+  const router = useRouter();
 
-  // Safari falls back to mp4 when no WebM profile is supported; name the file to
-  // match the actual container instead of always claiming .webm.
+  const [uploadState, setUploadState] = useState<UploadState>("idle");
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  const createUpload = api.video.createUpload.useMutation();
+  const markUploaded = api.video.markUploaded.useMutation();
+  const markFailed = api.video.markFailed.useMutation();
+
+  // Survives across retries so a failed `markUploaded` doesn't re-reserve a
+  // second Cloudflare asset or re-POST the blob.
+  const uploadRef = useRef<{
+    videoId: string;
+    uploadURL: string;
+    uploaded: boolean;
+  } | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+
+  const isUploading = uploadState === "uploading";
+
   const extension = recordedType?.includes("mp4") ? "mp4" : "webm";
   const downloadName = `screen-recording-${new Date()
     .toISOString()
@@ -35,6 +70,110 @@ export function ReviewPanel() {
     video.currentTime = 1e101;
   };
 
+  const handleUpload = async () => {
+    if (!recordedBlob || isUploading) return;
+    if (recordedBlob.size > MAX_UPLOAD_BYTES) {
+      setUploadState("error");
+      setUploadError(
+        "This recording is over 200 MB, which is too large to upload right now. Download it instead.",
+      );
+      return;
+    }
+
+    setUploadState("uploading");
+    setUploadError(null);
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    try {
+      // 1. Reserve the Cloudflare asset + row once (reused on retry).
+      if (!uploadRef.current) {
+        const { videoId, uploadURL } = await createUpload.mutateAsync({
+          mode: cameraOn ? "BOTH" : "SCREEN",
+          durationSec: elapsedSec > 0 ? elapsedSec : undefined,
+        });
+        uploadRef.current = { videoId, uploadURL, uploaded: false };
+      }
+      const reserved = uploadRef.current;
+
+      // 2. Upload the blob straight to Cloudflare once.
+      if (!reserved.uploaded) {
+        const form = new FormData();
+        form.append("file", recordedBlob, downloadName);
+        let res: Response;
+        try {
+          res = await fetch(reserved.uploadURL, {
+            method: "POST",
+            body: form,
+            signal: controller.signal,
+          });
+        } catch (err) {
+          if (controller.signal.aborted) throw err; // handled below as a cancel
+          await markFailed
+            .mutateAsync({ videoId: reserved.videoId })
+            .catch(() => undefined);
+          uploadRef.current = null;
+          throw new Error(
+            "Upload failed. Check your connection and try again.",
+          );
+        }
+        if (!res.ok) {
+          await markFailed
+            .mutateAsync({ videoId: reserved.videoId })
+            .catch(() => undefined);
+          uploadRef.current = null;
+          throw new Error(`Upload failed (${res.status}).`);
+        }
+        reserved.uploaded = true;
+      }
+
+      // 3. Flip the row to processing (idempotent — safe to re-run on retry).
+      await markUploaded.mutateAsync({ videoId: reserved.videoId });
+
+      uploadRef.current = null;
+      abortRef.current = null;
+      close();
+      router.refresh();
+    } catch (err) {
+      abortRef.current = null;
+      if (controller.signal.aborted) {
+        // User cancelled — release the reserved row, reset quietly.
+        const reserved = uploadRef.current;
+        if (reserved && !reserved.uploaded) {
+          await markFailed
+            .mutateAsync({ videoId: reserved.videoId })
+            .catch(() => undefined);
+        }
+        uploadRef.current = null;
+        setUploadState("idle");
+        setUploadError(null);
+        return;
+      }
+      setUploadState("error");
+      setUploadError(
+        err instanceof Error ? err.message : "Something went wrong uploading.",
+      );
+    }
+  };
+
+  // Auto-upload: kick the upload off as soon as the recording is ready, so the
+  // user doesn't have to press anything. Closing the panel aborts and discards.
+  const autoStartedRef = useRef(false);
+  useEffect(() => {
+    if (autoStartedRef.current || !recordedBlob) return;
+    autoStartedRef.current = true;
+    void handleUpload();
+    // handleUpload is stable enough for a once-per-mount auto-start.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recordedBlob]);
+
+  // Close is always available — during an upload it aborts (which cleans up the
+  // reserved row) and then dismisses, so the user is never trapped.
+  const handleClose = () => {
+    if (isUploading) abortRef.current?.abort();
+    close();
+  };
+
   return (
     <div
       role="dialog"
@@ -44,12 +183,12 @@ export function ReviewPanel() {
     >
       <div className="flex items-center justify-between px-[16px] py-[12px]">
         <h2 id="recorder-review-title" className="text-[16px] font-semibold">
-          Recording ready
+          {isUploading ? "Uploading to your library…" : "Recording ready"}
         </h2>
         <button
           type="button"
           aria-label="Close"
-          onClick={close}
+          onClick={handleClose}
           className="inline-flex h-[32px] w-[32px] cursor-pointer items-center justify-center rounded-[6px] bg-transparent p-0 text-[hsla(228,6%,17%,1)] transition-colors duration-200 hover:bg-[hsla(209,75.6%,8%,0.08)]"
         >
           <CloseIcon className="h-[16px] w-[16px]" />
@@ -72,11 +211,21 @@ export function ReviewPanel() {
         )}
       </div>
 
+      {uploadError ? (
+        <p
+          role="alert"
+          className="mx-[16px] mt-[12px] rounded-[8px] bg-[hsla(11.2,100%,58%,0.1)] px-[12px] py-[8px] text-[12px] font-medium text-[hsla(11.2,100%,40%,1)]"
+        >
+          {uploadError}
+        </p>
+      ) : null}
+
       <div className="flex items-center justify-end gap-[8px] px-[16px] py-[12px]">
         <button
           type="button"
           onClick={open}
-          className="inline-flex h-[40px] cursor-pointer items-center rounded-[8px] border border-[hsla(225.5,57%,10%,0.14)] bg-white px-[16px] text-[14px] font-medium text-[hsla(228,6%,17%,1)] transition-colors duration-200 hover:bg-[hsla(209,75.6%,8%,0.08)]"
+          disabled={isUploading}
+          className="inline-flex h-[40px] cursor-pointer items-center rounded-[8px] border border-[hsla(225.5,57%,10%,0.14)] bg-white px-[16px] text-[14px] font-medium text-[hsla(228,6%,17%,1)] transition-colors duration-200 hover:bg-[hsla(209,75.6%,8%,0.08)] disabled:cursor-not-allowed disabled:opacity-50"
         >
           Record another
         </button>
@@ -84,21 +233,25 @@ export function ReviewPanel() {
           href={recordedUrl ?? undefined}
           download={downloadName}
           aria-disabled={recordedUrl === null}
-          className={`inline-flex h-[40px] items-center rounded-[8px] px-[16px] text-[14px] font-medium text-white transition-colors duration-200 ${
+          className={`inline-flex h-[40px] items-center rounded-[8px] border border-[hsla(225.5,57%,10%,0.14)] px-[16px] text-[14px] font-medium text-[hsla(228,6%,17%,1)] transition-colors duration-200 ${
             recordedUrl
-              ? "cursor-pointer bg-[hsla(215.4,80%,47.65%,1)] hover:bg-[hsla(216.1,81.4%,60%,1)]"
-              : "pointer-events-none cursor-not-allowed bg-[hsla(215.4,40%,70%,1)]"
+              ? "cursor-pointer hover:bg-[hsla(209,75.6%,8%,0.08)]"
+              : "pointer-events-none cursor-not-allowed opacity-50"
           }`}
         >
           Download
         </a>
         <button
           type="button"
-          disabled
-          title="Uploading to the cloud is coming next"
-          className="inline-flex h-[40px] cursor-not-allowed items-center rounded-[8px] bg-[hsla(209,76%,8%,0.08)] px-[16px] text-[14px] font-medium text-[hsla(224,5%,44%,1)]"
+          onClick={() => void handleUpload()}
+          disabled={!recordedBlob || isUploading}
+          className="inline-flex h-[40px] min-w-[140px] cursor-pointer items-center justify-center rounded-[8px] bg-[hsla(215.4,80%,47.65%,1)] px-[16px] text-[14px] font-medium text-white transition-colors duration-200 hover:bg-[hsla(216.1,81.4%,60%,1)] disabled:cursor-not-allowed disabled:bg-[hsla(215.4,40%,70%,1)]"
         >
-          Upload (next)
+          {isUploading
+            ? "Uploading…"
+            : uploadState === "error"
+              ? "Retry upload"
+              : "Upload to library"}
         </button>
       </div>
     </div>

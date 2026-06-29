@@ -77,6 +77,19 @@ export function VideoCard({ video }: VideoCardProps) {
               <VideoCardHoverActions videoId={video.id} title={video.title} />
             </div>
           </div>
+
+          {/* Pipeline overlay while the upload is still encoding on Cloudflare. */}
+          {video.status !== "READY" && (
+            <div className="absolute inset-0 flex items-center justify-center bg-[hsla(240,3%,12.5%,0.7)]">
+              <span className="rounded-[6px] bg-[hsla(0,0%,100%,0.14)] px-[10px] py-[4px] text-[12px] font-medium text-white">
+                {video.status === "ERRORED"
+                  ? "Upload failed"
+                  : video.status === "UPLOADING"
+                    ? "Uploading…"
+                    : "Processing…"}
+              </span>
+            </div>
+          )}
         </div>
 
         {duration && (
@@ -158,8 +171,9 @@ export function VideoCard({ video }: VideoCardProps) {
                 </div>
               </div>
 
-              {/* css-103pznj wrapper <p> for the visibility cluster — same dimmed 12px styling. */}
-              <p className="block text-[12px] font-normal leading-[1.5] text-[hsla(224,5%,44%,1)]">
+              {/* css-103pznj wrapper for the visibility cluster — a <div>, not a
+                  <p>, because it nests block elements (a <p> can't contain a <div>). */}
+              <div className="block text-[12px] font-normal leading-[1.5] text-[hsla(224,5%,44%,1)]">
                 {/* video-card_videoVisibility_jH9 — RECONSTRUCTED: "Not shared" + chevron; shrink-0. */}
                 <span className="shrink-0">
                   <div>
@@ -188,7 +202,7 @@ export function VideoCard({ video }: VideoCardProps) {
                     </div>
                   </div>
                 </span>
-              </p>
+              </div>
             </div>
 
             {/* css-1h483it — block, vertical-align middle, pt 8px, pb 12px (title wrapper). */}
