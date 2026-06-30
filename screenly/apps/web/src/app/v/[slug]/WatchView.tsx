@@ -4,8 +4,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Script from "next/script";
 
 import type { RouterOutputs } from "~/trpc/react";
+import { RecorderOverlay } from "~/app/_components/recorder/RecorderOverlay";
+import { RecorderProvider } from "~/app/_components/recorder/RecorderProvider";
 import { api } from "~/trpc/react";
 import { WatchRoom } from "./loom/WatchRoom";
+import {
+  WATCH_SIDEBAR_DRAWER_ID,
+  WatchSidebarDrawer,
+} from "./loom/WatchSidebarDrawer";
 
 export type WatchData = RouterOutputs["video"]["getBySlug"];
 
@@ -41,6 +47,7 @@ export function WatchView({
 }) {
   const [data, setData] = useState<WatchData>(initial);
   const [timedOut, setTimedOut] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const utils = api.useUtils();
   const syncTranscript = api.video.syncTranscript.useMutation();
@@ -188,6 +195,9 @@ export function WatchView({
     seekPlayer(player, startMs);
   }, [attachPlayer, seekPlayer]);
 
+  const openSidebar = useCallback(() => setIsSidebarOpen(true), []);
+  const closeSidebar = useCallback(() => setIsSidebarOpen(false), []);
+
   const ownerName = data.owner.name ?? "Unknown";
   const transcriptState: "loading" | "ready" | "unavailable" | "waiting" =
     data.status !== "READY"
@@ -200,7 +210,7 @@ export function WatchView({
           : "loading";
 
   return (
-    <>
+    <RecorderProvider>
       <Script src={STREAM_SDK_SRC} onLoad={() => setSdkReady(true)} />
       <WatchRoom
         title={data.title}
@@ -233,8 +243,13 @@ export function WatchView({
         iframeRef={setIframeRef}
         onPlayerLoad={handlePlayerLoad}
         onSeek={handleSeek}
+        isMainNavOpen={isSidebarOpen}
+        mainNavControlsId={WATCH_SIDEBAR_DRAWER_ID}
+        onMainNavClick={openSidebar}
       />
-    </>
+      <WatchSidebarDrawer isOpen={isSidebarOpen} onClose={closeSidebar} />
+      <RecorderOverlay />
+    </RecorderProvider>
   );
 }
 

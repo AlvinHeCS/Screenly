@@ -3,6 +3,10 @@ import Link from "next/link";
 import { CollapseSidebarIcon } from "./icons/CollapseSidebarIcon";
 import { ScreenlyLogoIcon } from "./icons/ScreenlyLogoIcon";
 
+interface SidebarHeaderProps {
+  onCollapse?: () => void;
+}
+
 /**
  * Sidebar header row: the Screenly wordmark and the collapse-sidebar button.
  *
@@ -15,7 +19,7 @@ import { ScreenlyLogoIcon } from "./icons/ScreenlyLogoIcon";
  * the "Screenly" wordmark; the collapse icon renders at the wrapper's
  * `size="2.25"` (18px).
  */
-export function SidebarHeader() {
+export function SidebarHeader({ onCollapse }: SidebarHeaderProps) {
   return (
     <div className="grid grid-flow-col items-center justify-between gap-[8px]">
       {/* css-n7wfxh */}
@@ -34,7 +38,9 @@ export function SidebarHeader() {
       {/* css-nez7wg */}
       <div className="inline-block align-middle">
         <button
-          aria-label="Collapse sidebar"
+          type="button"
+          aria-label={onCollapse ? "Close sidebar" : "Collapse sidebar"}
+          onClick={onCollapse}
           className="relative inline-flex h-[24px] w-[24px] cursor-pointer items-center justify-center rounded-[4px] border-none bg-transparent p-0 align-middle outline outline-1 outline-transparent transition-colors duration-[600ms] hover:bg-[#0515240f] hover:duration-[300ms] active:bg-[#0b120e24]"
         >
           {/* css-1y53iih: colour body */}

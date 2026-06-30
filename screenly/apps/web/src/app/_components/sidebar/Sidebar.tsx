@@ -1,7 +1,13 @@
+"use client";
+
 import { RecordButton } from "./RecordButton";
 import { SidebarHeader } from "./SidebarHeader";
 import { SidebarNav } from "./SidebarNav";
 import { WorkspaceSelector } from "./WorkspaceSelector";
+
+interface SidebarProps {
+  onCollapse?: () => void;
+}
 
 /**
  * Loom's left navigation sidebar, reconstructed as a self-contained component.
@@ -19,10 +25,10 @@ import { WorkspaceSelector } from "./WorkspaceSelector";
  * Composition: SidebarHeader → spacer → WorkspaceSelector → SidebarNav →
  * RecordButton, matching the source child order.
  */
-export function Sidebar() {
+export function Sidebar({ onCollapse }: SidebarProps) {
   return (
     <div className="flex h-full w-[240px] flex-col border-r border-[hsla(225.5,57%,10%,0.14)] px-[8px] pt-[16px] text-[hsla(228,6%,17%,1)]">
-      <SidebarHeader />
+      <SidebarHeader onCollapse={onCollapse} />
       {/* css-202ccx */}
       <div aria-hidden className="block pb-[24px] align-middle" />
       <WorkspaceSelector />
