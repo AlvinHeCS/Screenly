@@ -24,6 +24,8 @@ export interface WatchRoomProps {
   cues: TranscriptCue[];
   /** Forwarded to the player iframe so the parent can drive seeks. */
   iframeRef?: Ref<HTMLIFrameElement>;
+  /** Notifies the parent when the player iframe has loaded. */
+  onPlayerLoad?: () => void;
   /** Clicking a transcript timestamp seeks the player to that cue. */
   onSeek?: (startMs: number) => void;
 }
@@ -49,6 +51,7 @@ export function WatchRoom({
   transcriptState,
   cues,
   iframeRef,
+  onPlayerLoad,
   onSeek,
 }: WatchRoomProps) {
   return (
@@ -81,6 +84,7 @@ export function WatchRoom({
                 durationLabel={durationLabel}
                 posterMessage={posterMessage}
                 iframeRef={iframeRef}
+                onPlayerLoad={onPlayerLoad}
               />
             </div>
           </div>
