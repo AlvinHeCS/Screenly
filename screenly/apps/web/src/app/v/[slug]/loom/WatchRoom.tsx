@@ -25,6 +25,9 @@ export interface WatchRoomProps {
   iframeRef?: Ref<HTMLIFrameElement>;
   /** Clicking a transcript timestamp seeks the player to that cue. */
   onSeek?: (startMs: number) => void;
+  isMainNavOpen?: boolean;
+  mainNavControlsId?: string;
+  onMainNavClick?: () => void;
 }
 
 /**
@@ -48,6 +51,9 @@ export function WatchRoom({
   cues,
   iframeRef,
   onSeek,
+  isMainNavOpen,
+  mainNavControlsId,
+  onMainNavClick,
 }: WatchRoomProps) {
   return (
     <main className="min-h-screen bg-white text-[#1d1c20]">
@@ -57,6 +63,9 @@ export function WatchRoom({
         avatarSrc={avatarSrc}
         avatarAlt={ownerName}
         avatarInitials={ownerInitials}
+        isMainNavOpen={isMainNavOpen}
+        mainNavControlsId={mainNavControlsId}
+        onMainNavClick={onMainNavClick}
       />
       <div className="mx-auto w-full max-w-[1400px] px-[24px] pb-[48px] pt-[24px]">
         <TitleBar

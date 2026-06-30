@@ -16,6 +16,9 @@ interface WatchHeaderProps {
   avatarSrc?: string;
   avatarAlt: string;
   avatarInitials: string;
+  isMainNavOpen?: boolean;
+  mainNavControlsId?: string;
+  onMainNavClick?: () => void;
 }
 
 /**
@@ -29,6 +32,9 @@ export function WatchHeader({
   avatarSrc,
   avatarAlt,
   avatarInitials,
+  isMainNavOpen = false,
+  mainNavControlsId,
+  onMainNavClick,
 }: WatchHeaderProps) {
   return (
     <header className="sticky top-0 z-[103] flex h-[56px] items-center gap-[8px] border-b border-[#ececef] bg-white px-[16px]">
@@ -39,7 +45,12 @@ export function WatchHeader({
         Skip to content
       </a>
 
-      <HeaderIconButton label="Main nav">
+      <HeaderIconButton
+        label="Main nav"
+        ariaControls={mainNavControlsId}
+        ariaExpanded={isMainNavOpen}
+        onClick={onMainNavClick}
+      >
         <MainNavIcon className="h-[16px] w-[16px]" />
       </HeaderIconButton>
 
