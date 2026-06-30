@@ -110,6 +110,14 @@ enum CaptureMode {
     BOTH
 }
 
+enum TranscriptStatus {
+    PENDING // row exists; caption generation not yet requested
+    GENERATING // Cloudflare is generating captions
+    READY // cues fetched + stored
+    FAILED // generation errored past the retry budget
+    UNAVAILABLE // generated but empty (no speech), unsupported, or timed out
+}
+
 model Workspace {
     id               String        @id @default(cuid())
     name             String
@@ -171,11 +179,12 @@ model Video {
     createdAt     DateTime    @default(now())
     updatedAt     DateTime    @updatedAt
 
-    owner     User      @relation("VideoOwner", fields: [ownerId], references: [id], onDelete: Cascade)
-    workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-    folder    Folder?   @relation(fields: [folderId], references: [id], onDelete: SetNull)
-    comments  Comment[]
-    views     View[]
+    owner      User        @relation("VideoOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+    workspace  Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+    folder     Folder?     @relation(fields: [folderId], references: [id], onDelete: SetNull)
+    comments   Comment[]
+    views      View[]
+    transcript Transcript?
 
     @@index([workspaceId])
     @@index([ownerId])
@@ -213,4 +222,19 @@ model View {
 
     @@index([videoId])
     @@index([viewerUuid])
+}
+
+model Transcript {
+    id                  String           @id @default(cuid())
+    videoId             String           @unique
+    status              TranscriptStatus @default(PENDING)
+    language            String           @default("en")
+    cues                Json             @default("[]") // [{ startMs: number, text: string }]
+    attempts            Int              @default(0) // caption-generation attempts, to bound retries
+    generationStartedAt DateTime? // when we entered GENERATING — bounds the wait
+    lastPolledAt        DateTime? // last Cloudflare poll — throttles the public sync endpoint
+    createdAt           DateTime         @default(now())
+    updatedAt           DateTime         @updatedAt
+
+    video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
 }

@@ -1,11 +1,23 @@
+import type {
+  Prisma,
+  PrismaClient,
+  Transcript,
+  Visibility,
+} from "@screenly/db";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
+import type { CaptionStatus, TranscriptCue } from "../cloudflare";
 import {
   createDirectUpload,
+  deleteCaptions,
   deleteStreamVideo,
+  generateCaptions,
+  getCaptionStatus,
+  getCaptionVtt,
   getStreamVideo,
   isStreamConfigured,
+  parseVtt,
 } from "../cloudflare";
 import {
   createTRPCRouter,
@@ -13,6 +25,179 @@ import {
   publicProcedure,
   workspaceProcedure,
 } from "../trpc";
+
+const TRANSCRIPT_LANGUAGE = "en";
+const MAX_TRANSCRIPT_ATTEMPTS = 3;
+/** Give up on caption generation after this long; release with no transcript. */
+const GENERATING_TIMEOUT_MS = 10 * 60 * 1000;
+/** Min gap between outbound Cloudflare caption calls per video (public endpoint). */
+const TRANSCRIPT_SYNC_COOLDOWN_MS = 3000;
+
+type VideoForTranscript = {
+  id: string;
+  status: string;
+  cloudflareUid: string | null;
+  transcript: Transcript | null;
+};
+
+/** Coerce the stored Json blob back into validated cues. */
+function toCues(value: Prisma.JsonValue | null | undefined): TranscriptCue[] {
+  if (!Array.isArray(value)) return [];
+  const cues: TranscriptCue[] = [];
+  for (const item of value) {
+    if (item && typeof item === "object" && !Array.isArray(item)) {
+      const rec = item as Record<string, unknown>;
+      if (typeof rec.startMs === "number" && typeof rec.text === "string") {
+        cues.push({ startMs: rec.startMs, text: rec.text });
+      }
+    }
+  }
+  return cues;
+}
+
+/** Visibility gate shared by getBySlug + syncTranscript. Throws NOT_FOUND. */
+async function assertCanView(
+  db: PrismaClient,
+  video: { visibility: Visibility; ownerId: string; workspaceId: string },
+  userId: string | null,
+): Promise<void> {
+  switch (video.visibility) {
+    case "LINK":
+      return;
+    case "PRIVATE":
+      if (userId && userId === video.ownerId) return;
+      break;
+    case "WORKSPACE":
+      if (
+        userId &&
+        (await db.membership.findFirst({
+          where: { userId, workspaceId: video.workspaceId },
+          select: { id: true },
+        }))
+      ) {
+        return;
+      }
+      break;
+    case "PASSWORD":
+      break;
+  }
+  throw new TRPCError({ code: "NOT_FOUND" });
+}
+
+/**
+ * Advance the transcript one step for a READY video: ensure a row, generate
+ * captions, poll Cloudflare, store cues. Throttled + time-bounded so the public
+ * sync endpoint can't fan out unbounded and a stuck job can't pin "generating".
+ */
+async function advanceTranscript(
+  db: PrismaClient,
+  video: VideoForTranscript,
+): Promise<Transcript | null> {
+  const uid = video.cloudflareUid;
+  if (!uid || video.status !== "READY") return video.transcript;
+
+  let transcript =
+    video.transcript ??
+    (await db.transcript.create({
+      data: { videoId: video.id, language: TRANSCRIPT_LANGUAGE },
+    }));
+
+  if (
+    transcript.status === "READY" ||
+    transcript.status === "FAILED" ||
+    transcript.status === "UNAVAILABLE"
+  ) {
+    return transcript;
+  }
+
+  const nowMs = Date.now();
+  // Throttle the outbound Cloudflare calls from this public endpoint.
+  if (
+    transcript.lastPolledAt &&
+    nowMs - transcript.lastPolledAt.getTime() < TRANSCRIPT_SYNC_COOLDOWN_MS
+  ) {
+    return transcript;
+  }
+
+  if (transcript.status === "PENDING") {
+    const claim = await db.transcript.updateMany({
+      where: { id: transcript.id, status: "PENDING" },
+      data: {
+        status: "GENERATING",
+        attempts: { increment: 1 },
+        generationStartedAt: new Date(),
+        lastPolledAt: new Date(),
+      },
+    });
+    if (claim.count === 1) {
+      try {
+        // Clear any prior errored entry first — generate 409s if one exists.
+        await deleteCaptions(uid, TRANSCRIPT_LANGUAGE);
+        await generateCaptions(uid, TRANSCRIPT_LANGUAGE);
+      } catch {
+        const next =
+          transcript.attempts + 1 >= MAX_TRANSCRIPT_ATTEMPTS
+            ? "FAILED"
+            : "PENDING";
+        await db.transcript.update({
+          where: { id: transcript.id },
+          data: { status: next },
+        });
+      }
+    }
+    return db.transcript.findUnique({ where: { id: transcript.id } });
+  }
+
+  // GENERATING — bound the wait so a never-resolving job can't pin the spinner.
+  if (
+    transcript.generationStartedAt &&
+    nowMs - transcript.generationStartedAt.getTime() > GENERATING_TIMEOUT_MS
+  ) {
+    return db.transcript.update({
+      where: { id: transcript.id },
+      data: { status: "UNAVAILABLE" },
+    });
+  }
+  await db.transcript.update({
+    where: { id: transcript.id },
+    data: { lastPolledAt: new Date() },
+  });
+
+  let status: CaptionStatus | null;
+  try {
+    status = await getCaptionStatus(uid, TRANSCRIPT_LANGUAGE);
+  } catch {
+    return db.transcript.findUnique({ where: { id: transcript.id } });
+  }
+
+  if (status === "ready") {
+    try {
+      const cues = parseVtt(await getCaptionVtt(uid, TRANSCRIPT_LANGUAGE));
+      return db.transcript.update({
+        where: { id: transcript.id },
+        data: {
+          status: cues.length > 0 ? "READY" : "UNAVAILABLE",
+          cues: cues as unknown as Prisma.InputJsonValue,
+        },
+      });
+    } catch {
+      return db.transcript.update({
+        where: { id: transcript.id },
+        data: { status: "FAILED" },
+      });
+    }
+  }
+  if (status === "error") {
+    const next =
+      transcript.attempts >= MAX_TRANSCRIPT_ATTEMPTS ? "FAILED" : "PENDING";
+    return db.transcript.update({
+      where: { id: transcript.id },
+      data: { status: next },
+    });
+  }
+  // null (no entry yet) or "inprogress" — keep waiting.
+  return db.transcript.findUnique({ where: { id: transcript.id } });
+}
 
 export const videoRouter = createTRPCRouter({
   /**
@@ -241,32 +426,11 @@ export const videoRouter = createTRPCRouter({
           ownerId: true,
           workspaceId: true,
           owner: { select: { name: true, image: true } },
+          transcript: { select: { status: true, cues: true } },
         },
       });
       if (!video) throw new TRPCError({ code: "NOT_FOUND" });
-
-      const userId = ctx.session?.user?.id ?? null;
-      let canView = false;
-      switch (video.visibility) {
-        case "LINK":
-          canView = true;
-          break;
-        case "PRIVATE":
-          canView = userId !== null && userId === video.ownerId;
-          break;
-        case "WORKSPACE":
-          canView =
-            userId !== null &&
-            (await ctx.db.membership.findFirst({
-              where: { userId, workspaceId: video.workspaceId },
-              select: { id: true },
-            })) !== null;
-          break;
-        case "PASSWORD":
-          canView = false;
-          break;
-      }
-      if (!canView) throw new TRPCError({ code: "NOT_FOUND" });
+      await assertCanView(ctx.db, video, ctx.session?.user?.id ?? null);
 
       return {
         id: video.id,
@@ -276,6 +440,40 @@ export const videoRouter = createTRPCRouter({
         durationSec: video.durationSec,
         createdAt: video.createdAt,
         owner: video.owner,
+        transcript: {
+          status: video.transcript?.status ?? "PENDING",
+          cues: toCues(video.transcript?.cues),
+        },
+      };
+    }),
+
+  /**
+   * Advance + return the transcript for the /v/{slug} room. Public (same gate as
+   * getBySlug) and throttled. The watch page polls this while the video is READY
+   * and the transcript isn't terminal yet.
+   */
+  syncTranscript: publicProcedure
+    .input(z.object({ slug: z.string().min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      const video = await ctx.db.video.findFirst({
+        where: { slug: input.slug, status: { not: "DELETED" } },
+        select: {
+          id: true,
+          status: true,
+          cloudflareUid: true,
+          visibility: true,
+          ownerId: true,
+          workspaceId: true,
+          transcript: true,
+        },
+      });
+      if (!video) throw new TRPCError({ code: "NOT_FOUND" });
+      await assertCanView(ctx.db, video, ctx.session?.user?.id ?? null);
+
+      const transcript = await advanceTranscript(ctx.db, video);
+      return {
+        status: transcript?.status ?? "PENDING",
+        cues: toCues(transcript?.cues),
       };
     }),
 });
