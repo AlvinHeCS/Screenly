@@ -1,11 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import Script from "next/script";
 
 import type { RouterOutputs } from "~/trpc/react";
 import { api } from "~/trpc/react";
+import { WatchRoom } from "./loom/WatchRoom";
 
 export type WatchData = RouterOutputs["video"]["getBySlug"];
 
@@ -143,110 +143,76 @@ export function WatchView({
     });
   };
 
+  const ownerName = data.owner.name ?? "Unknown";
+  const transcriptState: "loading" | "ready" | "unavailable" | "waiting" =
+    data.status !== "READY"
+      ? "waiting"
+      : data.transcript.status === "READY"
+        ? "ready"
+        : data.transcript.status === "FAILED" ||
+            data.transcript.status === "UNAVAILABLE"
+          ? "unavailable"
+          : "loading";
+
   return (
-    <main className="flex min-h-screen flex-col bg-[hsla(228,6%,17%,1)] text-white">
-      <Script
-        src={STREAM_SDK_SRC}
-        onLoad={() => setSdkReady(true)}
+    <>
+      <Script src={STREAM_SDK_SRC} onLoad={() => setSdkReady(true)} />
+      <WatchRoom
+        title={data.title}
+        ownerName={ownerName}
+        ownerInitials={initialsOf(ownerName)}
+        ownerFirstName={firstNameOf(ownerName)}
+        dateLabel={formatDate(data.createdAt)}
+        viewsLabel="1 view"
+        durationLabel={formatDuration(data.durationSec)}
+        avatarSrc={data.owner.image ?? undefined}
+        embedUrl={
+          isReady
+            ? `https://iframe.videodelivery.net/${data.cloudflareUid}`
+            : undefined
+        }
+        posterMessage={
+          isReady
+            ? undefined
+            : data.status === "ERRORED"
+              ? "This recording failed to process."
+              : "This recording is still processing — hang tight…"
+        }
+        transcriptState={transcriptState}
+        cues={data.transcript.cues.map((cue) => ({
+          startMs: cue.startMs,
+          timestamp: formatTimestamp(cue.startMs),
+          text: cue.text,
+        }))}
+        iframeRef={iframeRef}
+        onSeek={handleSeek}
       />
-      <header className="flex items-center justify-between px-[24px] py-[16px]">
-        <Link
-          href="/videos"
-          className="text-[14px] font-medium text-[hsla(0,0%,100%,0.7)] transition-colors hover:text-white"
-        >
-          ← Library
-        </Link>
-      </header>
-
-      <div className="mx-auto flex w-full max-w-[1200px] flex-1 flex-col gap-[24px] px-[24px] pb-[48px] lg:flex-row">
-        <div className="min-w-0 flex-1">
-          <div className="overflow-hidden rounded-[12px] bg-black shadow-[0_12px_40px_rgba(0,0,0,0.4)]">
-            {isReady ? (
-              <iframe
-                ref={iframeRef}
-                src={`https://iframe.videodelivery.net/${data.cloudflareUid}`}
-                title={data.title}
-                allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
-                allowFullScreen
-                className="aspect-video w-full border-0"
-              />
-            ) : (
-              <div className="flex aspect-video w-full items-center justify-center text-[14px] text-[hsla(0,0%,100%,0.7)]">
-                {data.status === "ERRORED"
-                  ? "This recording failed to process."
-                  : "This recording is still processing — hang tight…"}
-              </div>
-            )}
-          </div>
-
-          <h1 className="mt-[16px] text-[20px] font-semibold">{data.title}</h1>
-          <p className="mt-[4px] text-[13px] text-[hsla(0,0%,100%,0.6)]">
-            {data.owner.name ?? "Unknown"}
-          </p>
-        </div>
-
-        <TranscriptPanel
-          videoReady={data.status === "READY"}
-          transcript={data.transcript}
-          onSeek={handleSeek}
-        />
-      </div>
-    </main>
+    </>
   );
 }
 
-function TranscriptPanel({
-  videoReady,
-  transcript,
-  onSeek,
-}: {
-  videoReady: boolean;
-  transcript: WatchData["transcript"];
-  onSeek: (startMs: number) => void;
-}) {
-  const terminalGenerated = transcript.status === "READY";
-  const unavailable =
-    transcript.status === "FAILED" || transcript.status === "UNAVAILABLE";
+function initialsOf(name: string): string {
+  return name.trim().charAt(0).toUpperCase() || "?";
+}
 
-  return (
-    <aside className="flex w-full shrink-0 flex-col overflow-hidden rounded-[12px] border border-[hsla(0,0%,100%,0.12)] bg-[hsla(0,0%,100%,0.03)] lg:h-[calc(100vh-140px)] lg:w-[360px]">
-      <div className="shrink-0 border-b border-[hsla(0,0%,100%,0.12)] px-[16px] py-[12px] text-[14px] font-semibold">
-        Transcript
-      </div>
-      <div className="min-h-0 flex-1 overflow-y-auto px-[16px] py-[12px]">
-        {!videoReady ? (
-          <p className="text-[13px] text-[hsla(0,0%,100%,0.55)]">
-            The transcript appears once the recording finishes processing.
-          </p>
-        ) : terminalGenerated && transcript.cues.length > 0 ? (
-          <ul className="flex flex-col gap-[10px]">
-            {transcript.cues.map((cue, i) => (
-              <li key={i} className="flex gap-[10px] text-[14px] leading-[1.5]">
-                <button
-                  type="button"
-                  onClick={() => onSeek(cue.startMs)}
-                  aria-label={`Jump to ${formatTimestamp(cue.startMs)}`}
-                  className="shrink-0 cursor-pointer border-0 bg-transparent px-0 pb-0 pt-[1px] font-mono text-[12px] text-[hsla(210,90%,72%,1)] transition-colors hover:text-[hsla(210,95%,82%,1)] hover:underline focus-visible:underline focus-visible:outline-none"
-                >
-                  {formatTimestamp(cue.startMs)}
-                </button>
-                <span className="text-[hsla(0,0%,100%,0.92)]">{cue.text}</span>
-              </li>
-            ))}
-          </ul>
-        ) : unavailable ? (
-          <p className="text-[13px] text-[hsla(0,0%,100%,0.55)]">
-            Transcript unavailable for this video.
-          </p>
-        ) : (
-          <div className="flex items-center gap-[10px] text-[13px] text-[hsla(0,0%,100%,0.7)]">
-            <span className="h-[16px] w-[16px] animate-spin rounded-full border-[2px] border-[hsla(0,0%,100%,0.2)] border-t-white" />
-            Generating transcript…
-          </div>
-        )}
-      </div>
-    </aside>
-  );
+function firstNameOf(name: string): string {
+  return name.trim().split(/\s+/)[0] ?? name;
+}
+
+function formatDate(date: Date | string): string {
+  const d = typeof date === "string" ? new Date(date) : date;
+  return d.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+function formatDuration(durationSec: number | null): string {
+  const total = Math.max(0, Math.floor(durationSec ?? 0));
+  const minutes = Math.floor(total / 60);
+  const seconds = total % 60;
+  return `${minutes}:${String(seconds).padStart(2, "0")}`;
 }
 
 function formatTimestamp(ms: number): string {

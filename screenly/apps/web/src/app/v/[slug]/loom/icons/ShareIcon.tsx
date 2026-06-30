@@ -1,0 +1,19 @@
+interface ShareIconProps {
+  className?: string;
+}
+
+export function ShareIcon({ className }: ShareIconProps) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 16 16"
+      role="presentation"
+    >
+      <path
+        fill="currentColor"
+        d="M1 12.75A3.75 3.75 0 0 1 4.75 9H9v1.5H4.75a2.25 2.25 0 0 0-2.25 2.25V15H1zM9.5 4a2.5 2.5 0 1 0-5 0 2.5 2.5 0 0 0 5 0M11 4a4 4 0 1 1-8 0 4 4 0 0 1 8 0m2.75 6v2.25H16v1.5h-2.25V16h-1.5v-2.25H10v-1.5h2.25V10z"
+      />
+    </svg>
+  );
+}
