@@ -23,6 +23,7 @@ const SEEK_LEAD_SEC = 0.3;
 interface StreamPlayer {
   currentTime: number;
   play: () => Promise<void>;
+  destroy?: () => void;
 }
 
 declare global {
@@ -56,6 +57,8 @@ export function WatchView({
   // embed SDK builds from it. Transcript clicks seek/play through this handle.
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const playerRef = useRef<StreamPlayer | null>(null);
+  const playerIframeRef = useRef<HTMLIFrameElement | null>(null);
+  const pendingSeekMsRef = useRef<number | null>(null);
   const [sdkReady, setSdkReady] = useState(false);
 
   const videoPending =
@@ -112,16 +115,47 @@ export function WatchView({
 
   const isReady = data.status === "READY" && Boolean(data.cloudflareUid);
 
+  const setIframeRef = useCallback((node: HTMLIFrameElement | null) => {
+    if (iframeRef.current === node) return;
+    playerRef.current?.destroy?.();
+    playerRef.current = null;
+    playerIframeRef.current = null;
+    iframeRef.current = node;
+  }, []);
+
   // Build (once) the Stream player handle from the iframe + SDK global. Stable so
   // it can live in effect deps; returns null until both the iframe and SDK exist.
   const attachPlayer = useCallback((): StreamPlayer | null => {
-    if (playerRef.current) return playerRef.current;
     const iframe = iframeRef.current;
     const factory = window.Stream;
     if (!iframe || !factory) return null;
-    playerRef.current = factory(iframe);
-    return playerRef.current;
+    if (playerRef.current && playerIframeRef.current === iframe) {
+      return playerRef.current;
+    }
+    try {
+      playerRef.current = factory(iframe);
+      playerIframeRef.current = iframe;
+      return playerRef.current;
+    } catch {
+      return null;
+    }
   }, []);
+
+  const seekPlayer = useCallback((player: StreamPlayer, startMs: number) => {
+    player.currentTime = Math.max(0, startMs / 1000 - SEEK_LEAD_SEC);
+    void player.play().catch(() => {
+      // play() can reject if a rapid second click interrupts it — safe to ignore.
+    });
+  }, []);
+
+  const flushPendingSeek = useCallback(() => {
+    const startMs = pendingSeekMsRef.current;
+    if (startMs === null) return;
+    const player = attachPlayer();
+    if (!player) return;
+    pendingSeekMsRef.current = null;
+    seekPlayer(player, startMs);
+  }, [attachPlayer, seekPlayer]);
 
   // If the SDK was already loaded by a prior mount, next/script's onLoad won't
   // refire — pick it up here so sdkReady reflects reality.
@@ -132,17 +166,27 @@ export function WatchView({
   // Attach eagerly once the player iframe is mounted and the SDK is present, so
   // the postMessage handshake is done before the first transcript click.
   useEffect(() => {
-    if (isReady && sdkReady) attachPlayer();
-  }, [isReady, sdkReady, attachPlayer]);
+    if (!isReady || !sdkReady) return;
+    attachPlayer();
+    flushPendingSeek();
+  }, [isReady, sdkReady, attachPlayer, flushPendingSeek]);
 
-  const handleSeek = (startMs: number) => {
+  const handlePlayerLoad = useCallback(() => {
+    if (!window.Stream) return;
+    setSdkReady(true);
+    attachPlayer();
+    flushPendingSeek();
+  }, [attachPlayer, flushPendingSeek]);
+
+  const handleSeek = useCallback((startMs: number) => {
     const player = attachPlayer();
-    if (!player) return;
-    player.currentTime = Math.max(0, startMs / 1000 - SEEK_LEAD_SEC);
-    void player.play().catch(() => {
-      // play() can reject if a rapid second click interrupts it — safe to ignore.
-    });
-  };
+    if (!player) {
+      pendingSeekMsRef.current = startMs;
+      return;
+    }
+    pendingSeekMsRef.current = null;
+    seekPlayer(player, startMs);
+  }, [attachPlayer, seekPlayer]);
 
   const ownerName = data.owner.name ?? "Unknown";
   const transcriptState: "loading" | "ready" | "unavailable" | "waiting" =
@@ -186,7 +230,8 @@ export function WatchView({
           timestamp: formatTimestamp(cue.startMs),
           text: cue.text,
         }))}
-        iframeRef={iframeRef}
+        iframeRef={setIframeRef}
+        onPlayerLoad={handlePlayerLoad}
         onSeek={handleSeek}
       />
     </>
