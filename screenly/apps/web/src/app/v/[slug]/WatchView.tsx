@@ -58,7 +58,8 @@ export function WatchView({
   const playerRef = useRef<StreamPlayer | null>(null);
   const [sdkReady, setSdkReady] = useState(false);
 
-  const videoPending = data.status === "UPLOADING" || data.status === "PROCESSING";
+  const videoPending =
+    data.status === "UPLOADING" || data.status === "PROCESSING";
   const transcriptPending =
     data.status === "READY" &&
     !TRANSCRIPT_TERMINAL.includes(data.transcript.status);
@@ -162,7 +163,8 @@ export function WatchView({
         ownerName={ownerName}
         ownerInitials={initialsOf(ownerName)}
         ownerFirstName={firstNameOf(ownerName)}
-        dateLabel={formatDate(data.createdAt)}
+        dateLabel={formatRelativeDate(data.createdAt)}
+        dateTime={toIsoDateTime(data.createdAt)}
         viewsLabel="1 view"
         durationLabel={formatDuration(data.durationSec)}
         avatarSrc={data.owner.image ?? undefined}
@@ -199,13 +201,29 @@ function firstNameOf(name: string): string {
   return name.trim().split(/\s+/)[0] ?? name;
 }
 
-function formatDate(date: Date | string): string {
+function toIsoDateTime(date: Date | string): string {
   const d = typeof date === "string" ? new Date(date) : date;
-  return d.toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
+  return d.toISOString();
+}
+
+function formatRelativeDate(date: Date | string): string {
+  const d = typeof date === "string" ? new Date(date) : date;
+  const diffMs = Date.now() - d.getTime();
+  const absMs = Math.abs(diffMs);
+  const minuteMs = 60 * 1000;
+  const hourMs = 60 * minuteMs;
+  const dayMs = 24 * hourMs;
+
+  if (absMs < minuteMs) return "just now";
+
+  const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
+  if (absMs < hourMs) {
+    return rtf.format(-Math.round(diffMs / minuteMs), "minute");
+  }
+  if (absMs < dayMs) {
+    return rtf.format(-Math.round(diffMs / hourMs), "hour");
+  }
+  return rtf.format(-Math.round(diffMs / dayMs), "day");
 }
 
 function formatDuration(durationSec: number | null): string {
