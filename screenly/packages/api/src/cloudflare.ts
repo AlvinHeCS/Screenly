@@ -133,3 +133,131 @@ export function verifyStreamWebhook(
   if (a.length === 0 || a.length !== b.length) return false;
   return timingSafeEqual(a, b);
 }
+
+// ──────────────────────────── Generated captions ────────────────────────────
+
+/** A single transcript line: text plus its start offset in the video. */
+export interface TranscriptCue {
+  startMs: number;
+  text: string;
+}
+
+/** AI-caption lifecycle as Cloudflare reports it. */
+export type CaptionStatus = "inprogress" | "ready" | "error";
+
+interface CfCaption {
+  language?: string;
+  label?: string;
+  generated?: boolean;
+  status?: CaptionStatus;
+}
+
+/** Kick off AI caption generation for a language. */
+export async function generateCaptions(
+  uid: string,
+  language: string,
+): Promise<void> {
+  await cfFetch(
+    streamUrl(`/${encodeURIComponent(uid)}/captions/${language}/generate`),
+    { method: "POST" },
+  );
+}
+
+/**
+ * Delete a language's captions. Best-effort: a 404 (no entry) counts as success
+ * so callers can "clear then regenerate" — Cloudflare's generate endpoint 409s
+ * when an entry already exists.
+ */
+export async function deleteCaptions(
+  uid: string,
+  language: string,
+): Promise<void> {
+  if (!isStreamConfigured()) return;
+  const res = await fetch(
+    streamUrl(`/${encodeURIComponent(uid)}/captions/${language}`),
+    { method: "DELETE", headers: { Authorization: `Bearer ${STREAM_TOKEN}` } },
+  );
+  if (!res.ok && res.status !== 404) {
+    throw new Error(`Cloudflare caption delete failed (${res.status}).`);
+  }
+}
+
+/** Status of a language's captions, or null if no entry exists yet. */
+export async function getCaptionStatus(
+  uid: string,
+  language: string,
+): Promise<CaptionStatus | null> {
+  const list = await cfFetch<CfCaption[]>(
+    streamUrl(`/${encodeURIComponent(uid)}/captions`),
+  );
+  const entry = Array.isArray(list)
+    ? list.find((c) => c.language === language)
+    : undefined;
+  if (!entry) return null;
+  return entry.status ?? "ready";
+}
+
+/** Download the raw WebVTT for a language. */
+export async function getCaptionVtt(
+  uid: string,
+  language: string,
+): Promise<string> {
+  const res = await fetch(
+    streamUrl(`/${encodeURIComponent(uid)}/captions/${language}/vtt`),
+    { headers: { Authorization: `Bearer ${STREAM_TOKEN}` } },
+  );
+  if (!res.ok) {
+    throw new Error(`Cloudflare caption VTT fetch failed (${res.status}).`);
+  }
+  return res.text();
+}
+
+const TIMESTAMP_RE = /^(?:(\d+):)?(\d{1,2}):(\d{2})(?:[.,](\d{1,3}))?$/;
+
+function parseTimestamp(raw: string): number | null {
+  const m = TIMESTAMP_RE.exec(raw.trim());
+  if (!m) return null;
+  const hours = m[1] ? Number(m[1]) : 0;
+  const minutes = Number(m[2]);
+  const seconds = Number(m[3]);
+  const millis = m[4] ? Number(m[4].padEnd(3, "0")) : 0;
+  return ((hours * 60 + minutes) * 60 + seconds) * 1000 + millis;
+}
+
+function cleanCueText(text: string): string {
+  return text
+    .replace(/<[^>]*>/g, "") // voice/class/timestamp tags
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * Parse WebVTT into `{ startMs, text }` cues. Tolerant of cue ids, NOTE/STYLE
+ * blocks, cue settings after the end time, and inline tags.
+ */
+export function parseVtt(vtt: string): TranscriptCue[] {
+  const cues: TranscriptCue[] = [];
+  const blocks = vtt
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .split(/\n\n+/);
+
+  for (const block of blocks) {
+    const lines = block.split("\n");
+    const timingIdx = lines.findIndex((l) => l.includes("-->"));
+    if (timingIdx === -1) continue;
+
+    const startRaw = lines[timingIdx]!.split("-->")[0]!;
+    const startMs = parseTimestamp(startRaw);
+    if (startMs === null) continue;
+
+    const text = cleanCueText(lines.slice(timingIdx + 1).join(" "));
+    if (text) cues.push({ startMs, text });
+  }
+
+  return cues;
+}
