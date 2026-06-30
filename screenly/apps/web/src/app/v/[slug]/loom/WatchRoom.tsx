@@ -62,7 +62,6 @@ export function WatchRoom({
         <TitleBar
           title={title}
           ownerName={ownerName}
-          ownerInitials={ownerInitials}
           dateLabel={dateLabel}
           viewsLabel={viewsLabel}
         />
