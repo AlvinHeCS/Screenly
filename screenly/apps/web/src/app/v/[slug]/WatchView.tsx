@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import Script from "next/script";
 
 import type { RouterOutputs } from "~/trpc/react";
 import { api } from "~/trpc/react";
@@ -13,6 +14,22 @@ const POLL_INTERVAL_MS = 4000;
 const MAX_POLLS = 450;
 
 const TRANSCRIPT_TERMINAL = ["READY", "FAILED", "UNAVAILABLE"];
+
+const STREAM_SDK_SRC = "https://embed.cloudflarestream.com/embed/sdk.latest.js";
+/** Small run-up so a seek lands just before the cue's first word, never mid-word. */
+const SEEK_LEAD_SEC = 0.3;
+
+/** Minimal surface of the Cloudflare Stream player handle we use. */
+interface StreamPlayer {
+  currentTime: number;
+  play: () => Promise<void>;
+}
+
+declare global {
+  interface Window {
+    Stream?: (iframe: HTMLIFrameElement) => StreamPlayer;
+  }
+}
 
 export function WatchView({
   slug,
@@ -34,6 +51,12 @@ export function WatchView({
   const dataRef = useRef(data);
   dataRef.current = data;
   const pollCountRef = useRef(0);
+
+  // Cloudflare Stream player wiring: the iframe element + the player handle the
+  // embed SDK builds from it. Transcript clicks seek/play through this handle.
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
+  const playerRef = useRef<StreamPlayer | null>(null);
+  const [sdkReady, setSdkReady] = useState(false);
 
   const videoPending = data.status === "UPLOADING" || data.status === "PROCESSING";
   const transcriptPending =
@@ -88,8 +111,44 @@ export function WatchView({
 
   const isReady = data.status === "READY" && Boolean(data.cloudflareUid);
 
+  // Build (once) the Stream player handle from the iframe + SDK global. Stable so
+  // it can live in effect deps; returns null until both the iframe and SDK exist.
+  const attachPlayer = useCallback((): StreamPlayer | null => {
+    if (playerRef.current) return playerRef.current;
+    const iframe = iframeRef.current;
+    const factory = window.Stream;
+    if (!iframe || !factory) return null;
+    playerRef.current = factory(iframe);
+    return playerRef.current;
+  }, []);
+
+  // If the SDK was already loaded by a prior mount, next/script's onLoad won't
+  // refire — pick it up here so sdkReady reflects reality.
+  useEffect(() => {
+    if (window.Stream) setSdkReady(true);
+  }, []);
+
+  // Attach eagerly once the player iframe is mounted and the SDK is present, so
+  // the postMessage handshake is done before the first transcript click.
+  useEffect(() => {
+    if (isReady && sdkReady) attachPlayer();
+  }, [isReady, sdkReady, attachPlayer]);
+
+  const handleSeek = (startMs: number) => {
+    const player = attachPlayer();
+    if (!player) return;
+    player.currentTime = Math.max(0, startMs / 1000 - SEEK_LEAD_SEC);
+    void player.play().catch(() => {
+      // play() can reject if a rapid second click interrupts it — safe to ignore.
+    });
+  };
+
   return (
     <main className="flex min-h-screen flex-col bg-[hsla(228,6%,17%,1)] text-white">
+      <Script
+        src={STREAM_SDK_SRC}
+        onLoad={() => setSdkReady(true)}
+      />
       <header className="flex items-center justify-between px-[24px] py-[16px]">
         <Link
           href="/videos"
@@ -104,6 +163,7 @@ export function WatchView({
           <div className="overflow-hidden rounded-[12px] bg-black shadow-[0_12px_40px_rgba(0,0,0,0.4)]">
             {isReady ? (
               <iframe
+                ref={iframeRef}
                 src={`https://iframe.videodelivery.net/${data.cloudflareUid}`}
                 title={data.title}
                 allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
@@ -128,6 +188,7 @@ export function WatchView({
         <TranscriptPanel
           videoReady={data.status === "READY"}
           transcript={data.transcript}
+          onSeek={handleSeek}
         />
       </div>
     </main>
@@ -137,9 +198,11 @@ export function WatchView({
 function TranscriptPanel({
   videoReady,
   transcript,
+  onSeek,
 }: {
   videoReady: boolean;
   transcript: WatchData["transcript"];
+  onSeek: (startMs: number) => void;
 }) {
   const terminalGenerated = transcript.status === "READY";
   const unavailable =
@@ -159,9 +222,14 @@ function TranscriptPanel({
           <ul className="flex flex-col gap-[10px]">
             {transcript.cues.map((cue, i) => (
               <li key={i} className="flex gap-[10px] text-[14px] leading-[1.5]">
-                <span className="shrink-0 pt-[1px] font-mono text-[12px] text-[hsla(210,90%,72%,1)]">
+                <button
+                  type="button"
+                  onClick={() => onSeek(cue.startMs)}
+                  aria-label={`Jump to ${formatTimestamp(cue.startMs)}`}
+                  className="shrink-0 cursor-pointer border-0 bg-transparent px-0 pb-0 pt-[1px] font-mono text-[12px] text-[hsla(210,90%,72%,1)] transition-colors hover:text-[hsla(210,95%,82%,1)] hover:underline focus-visible:underline focus-visible:outline-none"
+                >
                   {formatTimestamp(cue.startMs)}
-                </span>
+                </button>
                 <span className="text-[hsla(0,0%,100%,0.92)]">{cue.text}</span>
               </li>
             ))}
