@@ -37,8 +37,13 @@ export function VideoCard({ video }: VideoCardProps) {
   return (
     // media-card_card_R1E video-card_videoCard_vn8 — RECONSTRUCTED: card shell;
     // relative positioning context for the share link, hover overlay and badge.
+    // The grey stroke is on the full card shell, not just the thumbnail.
     // The <li> is owned by VideoGrid (source: bare <li> → this card <div>).
-    <div className="relative" data-videoid={video.id} draggable>
+    <div
+      className="relative rounded-[8px] border border-[hsla(225.5,57%,10%,0.14)]"
+      data-videoid={video.id}
+      draggable
+    >
       {/* video-card_videoCardLink_Jvt radius:100 — RECONSTRUCTED: full-card share link overlay. */}
       <a
         className="absolute inset-0 z-[1] rounded-[8px]"
@@ -46,8 +51,8 @@ export function VideoCard({ video }: VideoCardProps) {
         aria-label={`Open video: ${video.title}`}
       />
 
-      {/* radius:100 overflow:hidden relative — the thumbnail clip box. */}
-      <div className="relative overflow-hidden rounded-[8px]">
+      {/* Thumbnail clip box — top corners follow the card radius; bottom edge is flat against the body. */}
+      <div className="relative overflow-hidden rounded-t-[8px]">
         {/* media-card_thumbnailWrapper_mO3 video-card_videoCardThumbnailWrapper_ixQ
               — RECONSTRUCTED: 16:9 thumbnail wrapper; group enables hover reveal. */}
         <div className="group relative aspect-video w-full bg-[hsla(240,3%,12.5%,1)]">
@@ -116,8 +121,10 @@ export function VideoCard({ video }: VideoCardProps) {
       </div>
 
       {/* media-card_body_R03 — RECONSTRUCTED: textual body below the thumbnail. */}
-      <div className="relative pt-[12px]">
-        {/* css-1gt4iho — grid grid-flow-col items-center justify-start gap 8px (avatar + name/title). */}
+      <div className="relative p-[16px]">
+        {/* css-1gt4iho — grid grid-flow-col items-center justify-start gap 8px.
+            It contains only the avatar and overflow:hidden author/visibility block.
+            The title block is a sibling below this grid in the source DOM. */}
         <div className="grid grid-flow-col items-center justify-start gap-[8px]">
           {/* css-l9d9x4 — avatar circle: blueDark text on white, rounded-full, 32×32, 16px text, fw 653. */}
           <span className="relative z-0 flex h-[32px] w-[32px] items-center justify-center overflow-hidden rounded-full bg-[hsla(0,0%,100%,1)] text-[16px] font-[653] leading-none text-[hsla(216.3,69.2%,23%,1)]">
@@ -134,20 +141,21 @@ export function VideoCard({ video }: VideoCardProps) {
             )}
           </span>
 
-          {/* overflow:hidden — wraps the name row + title. */}
+          {/* overflow:hidden — source wrapper around the author/date row and visibility row. */}
           <div className="overflow-hidden">
-            {/* video-card_nameRow_UKP — RECONSTRUCTED: author/date/visibility row. */}
-            <div className="flex min-w-0 items-center justify-between gap-[8px]">
-              {/* css-z67cp9 — height 16px (author + date group). */}
-              <div className="h-[16px]">
+            {/* video-card_nameRow_UKP — source row containing the author/date cluster only. */}
+            <div>
+              {/* css-z67cp9 — source is 16px, but the text primitives render an
+                  18px line box. Keep the author and date in the same centered row. */}
+              <div className="h-[18px]">
                 {/* css-1wmcmtc — grid grid-flow-col items-center justify-start. */}
-                <div className="grid grid-flow-col items-center justify-start">
+                <div className="flex h-[18px] items-center justify-start">
                   <span>
                     <div>
                       {/* profile-card_textLink_GSY — RECONSTRUCTED: bare author button (decorative). */}
                       <button
                         type="button"
-                        className="relative z-[1] cursor-pointer border-none bg-transparent p-0 text-left"
+                        className="relative z-[1] flex h-[18px] cursor-pointer items-center border-none bg-transparent p-0 text-left"
                         aria-expanded="false"
                         aria-haspopup="dialog"
                         aria-label={`${authorName}'s profile`}
@@ -155,9 +163,9 @@ export function VideoCard({ video }: VideoCardProps) {
                         tabIndex={0}
                       >
                         {/* css-2yt1u — height 1.125rem. */}
-                        <div className="h-[1.125rem]">
+                        <div className="flex h-[1.125rem] items-center">
                           {/* css-xgmh0l — block, 12px, line-height 1.5, fw 500, truncate (author name). */}
-                          <span className="block overflow-hidden text-ellipsis whitespace-nowrap text-[12px] font-medium leading-[1.5] text-[hsla(228,6%,17%,1)]">
+                          <span className="block overflow-hidden text-ellipsis whitespace-nowrap text-[12px] font-medium leading-[18px] text-[hsla(228,6%,17%,1)]">
                             {authorName}
                           </span>
                         </div>
@@ -165,56 +173,57 @@ export function VideoCard({ video }: VideoCardProps) {
                     </div>
                   </span>
                   {/* css-103pznj — 12px, line-height 1.5, fw 400, bodyDimmed (the "・6 days"). */}
-                  <p className="block text-[12px] font-normal leading-[1.5] text-[hsla(224,5%,44%,1)]">
+                  <p className="m-0 flex h-[18px] items-center text-[12px] font-normal leading-[18px] text-[hsla(224,5%,44%,1)]">
                     ・{relativeTimeFromNow(video.createdAt)}
                   </p>
                 </div>
               </div>
+            </div>
 
-              {/* css-103pznj wrapper for the visibility cluster — a <div>, not a
-                  <p>, because it nests block elements (a <p> can't contain a <div>). */}
-              <div className="block text-[12px] font-normal leading-[1.5] text-[hsla(224,5%,44%,1)]">
-                {/* video-card_videoVisibility_jH9 — RECONSTRUCTED: "Not shared" + chevron; shrink-0. */}
-                <span className="shrink-0">
-                  <div>
-                    {/* css-nez7wg — inline-block, vertical-align middle; tabIndex 0. */}
-                    <div className="inline-block align-middle" tabIndex={0}>
-                      {/* video-card_visibilityButton_qqT — RECONSTRUCTED: bare visibility button. */}
-                      <button
-                        type="button"
-                        className="relative z-[1] cursor-pointer border-none bg-transparent p-0"
-                      >
-                        {/* css-9nto4f — grid grid-flow-col items-center justify-start gap 4px. */}
-                        <div className="grid grid-flow-col items-center justify-start gap-[4px]">
-                          {/* css-6ta4y4 — block, 12px, line-height 1.5, fw 400, bodyDimmed, truncate. */}
-                          <span
-                            data-visibility-text="true"
-                            className="block overflow-hidden text-ellipsis whitespace-nowrap text-[12px] font-normal leading-[1.5] text-[hsla(224,5%,44%,1)]"
-                          >
-                            {visibilityLabel(video.visibility)}
-                          </span>
-                          {/* css-1ri22re — block, color body; 12×12 chevron. */}
-                          <span className="block text-[hsla(228,6%,17%,1)]">
-                            <ChevronDownIcon className="block h-[12px] w-[12px]" />
-                          </span>
-                        </div>
-                      </button>
-                    </div>
+            {/* css-103pznj — source uses a paragraph wrapper for the visibility cluster.
+                Rendered as a <div> to avoid invalid HTML from nesting block elements in <p>. */}
+            <div className="block text-[12px] font-normal leading-[1.5] text-[hsla(224,5%,44%,1)]">
+              {/* video-card_videoVisibility_jH9 — "Not shared" + chevron on its own line. */}
+              <span>
+                <div>
+                  {/* css-nez7wg — inline-block, vertical-align middle; tabIndex 0. */}
+                  <div className="inline-block align-middle" tabIndex={0}>
+                    {/* video-card_visibilityButton_qqT — RECONSTRUCTED: bare visibility button. */}
+                    <button
+                      type="button"
+                      className="relative z-[1] cursor-pointer border-none bg-transparent p-0"
+                    >
+                      {/* css-9nto4f — grid grid-flow-col items-center justify-start gap 4px. */}
+                      <div className="grid grid-flow-col items-center justify-start gap-[4px]">
+                        {/* css-6ta4y4 — block, 12px, line-height 1.5, fw 400, bodyDimmed, truncate. */}
+                        <span
+                          data-visibility-text="true"
+                          className="block overflow-hidden text-ellipsis whitespace-nowrap text-[12px] font-normal leading-[1.5] text-[hsla(224,5%,44%,1)]"
+                        >
+                          {visibilityLabel(video.visibility)}
+                        </span>
+                        {/* css-1ri22re — block, color body; 12×12 chevron. */}
+                        <span className="block text-[hsla(228,6%,17%,1)]">
+                          <ChevronDownIcon className="block h-[12px] w-[12px]" />
+                        </span>
+                      </div>
+                    </button>
                   </div>
-                </span>
-              </div>
+                </div>
+              </span>
             </div>
+          </div>
+        </div>
 
-            {/* css-1h483it — block, vertical-align middle, pt 8px, pb 12px (title wrapper). */}
-            <div className="block pb-[12px] pt-[8px] align-middle">
-              {/* css-34ugkb — height 2.75rem (two-line clamp box); aria-hidden. */}
-              <div className="h-[2.75rem]" aria-hidden="true">
-                {/* css-pmyn0g — 14px, line-height 1.57, fw 500, line-clamp 2 (the title). */}
-                <h3 className="line-clamp-2 overflow-hidden text-[14px] font-medium leading-[1.57] text-[hsla(228,6%,17%,1)]">
-                  {video.title}
-                </h3>
-              </div>
-            </div>
+        {/* css-1h483it — title block. In the source DOM this is a sibling after
+            css-1gt4iho, so it renders full-width below the avatar/name grid. */}
+        <div className="block pb-[12px] pt-[8px] align-middle">
+          {/* css-34ugkb — height 2.75rem (two-line clamp box); aria-hidden. */}
+          <div className="h-[2.75rem]" aria-hidden="true">
+            {/* css-pmyn0g — 14px, line-height 1.57, fw 500, line-clamp 2 (the title). */}
+            <h3 className="line-clamp-2 overflow-hidden text-[14px] font-medium leading-[1.57] text-[hsla(228,6%,17%,1)]">
+              {video.title}
+            </h3>
           </div>
         </div>
 
