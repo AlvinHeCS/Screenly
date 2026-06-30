@@ -29,6 +29,7 @@ const SEEK_LEAD_SEC = 0.3;
 interface StreamPlayer {
   currentTime: number;
   play: () => Promise<void>;
+  destroy?: () => void;
 }
 
 declare global {
@@ -63,9 +64,12 @@ export function WatchView({
   // embed SDK builds from it. Transcript clicks seek/play through this handle.
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const playerRef = useRef<StreamPlayer | null>(null);
+  const playerIframeRef = useRef<HTMLIFrameElement | null>(null);
+  const pendingSeekMsRef = useRef<number | null>(null);
   const [sdkReady, setSdkReady] = useState(false);
 
-  const videoPending = data.status === "UPLOADING" || data.status === "PROCESSING";
+  const videoPending =
+    data.status === "UPLOADING" || data.status === "PROCESSING";
   const transcriptPending =
     data.status === "READY" &&
     !TRANSCRIPT_TERMINAL.includes(data.transcript.status);
@@ -118,16 +122,47 @@ export function WatchView({
 
   const isReady = data.status === "READY" && Boolean(data.cloudflareUid);
 
+  const setIframeRef = useCallback((node: HTMLIFrameElement | null) => {
+    if (iframeRef.current === node) return;
+    playerRef.current?.destroy?.();
+    playerRef.current = null;
+    playerIframeRef.current = null;
+    iframeRef.current = node;
+  }, []);
+
   // Build (once) the Stream player handle from the iframe + SDK global. Stable so
   // it can live in effect deps; returns null until both the iframe and SDK exist.
   const attachPlayer = useCallback((): StreamPlayer | null => {
-    if (playerRef.current) return playerRef.current;
     const iframe = iframeRef.current;
     const factory = window.Stream;
     if (!iframe || !factory) return null;
-    playerRef.current = factory(iframe);
-    return playerRef.current;
+    if (playerRef.current && playerIframeRef.current === iframe) {
+      return playerRef.current;
+    }
+    try {
+      playerRef.current = factory(iframe);
+      playerIframeRef.current = iframe;
+      return playerRef.current;
+    } catch {
+      return null;
+    }
   }, []);
+
+  const seekPlayer = useCallback((player: StreamPlayer, startMs: number) => {
+    player.currentTime = Math.max(0, startMs / 1000 - SEEK_LEAD_SEC);
+    void player.play().catch(() => {
+      // play() can reject if a rapid second click interrupts it — safe to ignore.
+    });
+  }, []);
+
+  const flushPendingSeek = useCallback(() => {
+    const startMs = pendingSeekMsRef.current;
+    if (startMs === null) return;
+    const player = attachPlayer();
+    if (!player) return;
+    pendingSeekMsRef.current = null;
+    seekPlayer(player, startMs);
+  }, [attachPlayer, seekPlayer]);
 
   // If the SDK was already loaded by a prior mount, next/script's onLoad won't
   // refire — pick it up here so sdkReady reflects reality.
@@ -138,17 +173,27 @@ export function WatchView({
   // Attach eagerly once the player iframe is mounted and the SDK is present, so
   // the postMessage handshake is done before the first transcript click.
   useEffect(() => {
-    if (isReady && sdkReady) attachPlayer();
-  }, [isReady, sdkReady, attachPlayer]);
+    if (!isReady || !sdkReady) return;
+    attachPlayer();
+    flushPendingSeek();
+  }, [isReady, sdkReady, attachPlayer, flushPendingSeek]);
 
-  const handleSeek = (startMs: number) => {
+  const handlePlayerLoad = useCallback(() => {
+    if (!window.Stream) return;
+    setSdkReady(true);
+    attachPlayer();
+    flushPendingSeek();
+  }, [attachPlayer, flushPendingSeek]);
+
+  const handleSeek = useCallback((startMs: number) => {
     const player = attachPlayer();
-    if (!player) return;
-    player.currentTime = Math.max(0, startMs / 1000 - SEEK_LEAD_SEC);
-    void player.play().catch(() => {
-      // play() can reject if a rapid second click interrupts it — safe to ignore.
-    });
-  };
+    if (!player) {
+      pendingSeekMsRef.current = startMs;
+      return;
+    }
+    pendingSeekMsRef.current = null;
+    seekPlayer(player, startMs);
+  }, [attachPlayer, seekPlayer]);
 
   const openSidebar = useCallback(() => setIsSidebarOpen(true), []);
   const closeSidebar = useCallback(() => setIsSidebarOpen(false), []);
@@ -172,7 +217,8 @@ export function WatchView({
         ownerName={ownerName}
         ownerInitials={initialsOf(ownerName)}
         ownerFirstName={firstNameOf(ownerName)}
-        dateLabel={formatDate(data.createdAt)}
+        dateLabel={formatRelativeDate(data.createdAt)}
+        dateTime={toIsoDateTime(data.createdAt)}
         viewsLabel="1 view"
         durationLabel={formatDuration(data.durationSec)}
         avatarSrc={data.owner.image ?? undefined}
@@ -194,7 +240,8 @@ export function WatchView({
           timestamp: formatTimestamp(cue.startMs),
           text: cue.text,
         }))}
-        iframeRef={iframeRef}
+        iframeRef={setIframeRef}
+        onPlayerLoad={handlePlayerLoad}
         onSeek={handleSeek}
         isMainNavOpen={isSidebarOpen}
         mainNavControlsId={WATCH_SIDEBAR_DRAWER_ID}
@@ -214,13 +261,29 @@ function firstNameOf(name: string): string {
   return name.trim().split(/\s+/)[0] ?? name;
 }
 
-function formatDate(date: Date | string): string {
+function toIsoDateTime(date: Date | string): string {
   const d = typeof date === "string" ? new Date(date) : date;
-  return d.toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
+  return d.toISOString();
+}
+
+function formatRelativeDate(date: Date | string): string {
+  const d = typeof date === "string" ? new Date(date) : date;
+  const diffMs = Date.now() - d.getTime();
+  const absMs = Math.abs(diffMs);
+  const minuteMs = 60 * 1000;
+  const hourMs = 60 * minuteMs;
+  const dayMs = 24 * hourMs;
+
+  if (absMs < minuteMs) return "just now";
+
+  const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
+  if (absMs < hourMs) {
+    return rtf.format(-Math.round(diffMs / minuteMs), "minute");
+  }
+  if (absMs < dayMs) {
+    return rtf.format(-Math.round(diffMs / hourMs), "hour");
+  }
+  return rtf.format(-Math.round(diffMs / dayMs), "day");
 }
 
 function formatDuration(durationSec: number | null): string {

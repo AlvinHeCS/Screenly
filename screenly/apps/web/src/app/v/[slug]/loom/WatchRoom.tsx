@@ -12,6 +12,7 @@ export interface WatchRoomProps {
   ownerInitials: string;
   ownerFirstName: string;
   dateLabel: string;
+  dateTime: string;
   viewsLabel: string;
   durationLabel: string;
   embedUrl?: string;
@@ -23,6 +24,8 @@ export interface WatchRoomProps {
   cues: TranscriptCue[];
   /** Forwarded to the player iframe so the parent can drive seeks. */
   iframeRef?: Ref<HTMLIFrameElement>;
+  /** Notifies the parent when the player iframe has loaded. */
+  onPlayerLoad?: () => void;
   /** Clicking a transcript timestamp seeks the player to that cue. */
   onSeek?: (startMs: number) => void;
   isMainNavOpen?: boolean;
@@ -31,8 +34,8 @@ export interface WatchRoomProps {
 }
 
 /**
- * Loom share-page layout: a light page with the title/metadata row above a dark
- * rounded "theater" that holds the video (left) and the tabbed panel (right).
+ * Loom share-page layout: a light page with the title/metadata row and video on
+ * the left, plus Loom's fixed right sidebar for edit/activity/transcript tabs.
  */
 export function WatchRoom({
   title,
@@ -40,6 +43,7 @@ export function WatchRoom({
   ownerInitials,
   ownerFirstName,
   dateLabel,
+  dateTime,
   viewsLabel,
   durationLabel,
   embedUrl,
@@ -50,6 +54,7 @@ export function WatchRoom({
   transcriptState,
   cues,
   iframeRef,
+  onPlayerLoad,
   onSeek,
   isMainNavOpen,
   mainNavControlsId,
@@ -67,29 +72,39 @@ export function WatchRoom({
         mainNavControlsId={mainNavControlsId}
         onMainNavClick={onMainNavClick}
       />
-      <div className="mx-auto w-full max-w-[1400px] px-[24px] pb-[48px] pt-[24px]">
-        <TitleBar
-          title={title}
-          ownerName={ownerName}
-          dateLabel={dateLabel}
-          viewsLabel={viewsLabel}
-        />
-
-        <div className="flex flex-col overflow-hidden rounded-[12px] bg-[#1b1b1f] shadow-[0_12px_40px_rgba(0,0,0,0.18)] lg:flex-row">
-          <VideoFrame
-            embedUrl={embedUrl}
+      <div className="flex min-h-[calc(100vh-56px)] flex-col lg:flex-row">
+        <section
+          id="mainContent"
+          className="min-w-0 flex-1 px-[24px] pb-[48px] pt-[24px] lg:px-[28px]"
+        >
+          <TitleBar
             title={title}
-            durationLabel={durationLabel}
-            posterMessage={posterMessage}
-            iframeRef={iframeRef}
+            ownerName={ownerName}
+            dateLabel={dateLabel}
+            dateTime={dateTime}
+            viewsLabel={viewsLabel}
           />
-          <RightPanel
-            ownerFirstName={ownerFirstName}
-            transcriptState={transcriptState}
-            cues={cues}
-            onSeek={onSeek}
-          />
-        </div>
+
+          <div className="mx-auto w-full max-w-[1280px]">
+            <div className="overflow-hidden rounded-[12px] bg-black">
+              <VideoFrame
+                embedUrl={embedUrl}
+                title={title}
+                durationLabel={durationLabel}
+                posterMessage={posterMessage}
+                iframeRef={iframeRef}
+                onPlayerLoad={onPlayerLoad}
+              />
+            </div>
+          </div>
+        </section>
+
+        <RightPanel
+          ownerFirstName={ownerFirstName}
+          transcriptState={transcriptState}
+          cues={cues}
+          onSeek={onSeek}
+        />
       </div>
     </main>
   );

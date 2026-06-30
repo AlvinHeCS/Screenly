@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { signInWithGoogle } from "./actions";
 import { LoomWordmarkIcon } from "./icons/LoomWordmarkIcon";
 
@@ -6,9 +8,9 @@ import { LoomWordmarkIcon } from "./icons/LoomWordmarkIcon";
 export function LoginNavBar() {
   return (
     <header className="flex w-full items-center justify-between px-[24px] py-[16px]">
-      <a href="/" aria-label="Loom" className="flex items-center">
+      <Link href="/" aria-label="Loom" className="flex items-center">
         <LoomWordmarkIcon className="h-[28px] w-auto" />
-      </a>
+      </Link>
       <form action={signInWithGoogle}>
         <button
           type="submit"

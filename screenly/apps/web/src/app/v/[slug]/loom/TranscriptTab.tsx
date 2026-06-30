@@ -15,24 +15,27 @@ interface TranscriptTabProps {
 }
 
 /**
- * Transcript panel body: a header row with a (disabled) Download action, then
- * the list of phrase rows. Empty / loading / unavailable states mirror the
- * watch-room's transcript lifecycle.
+ * Transcript panel body: a small toolbar with Loom-style action buttons, then
+ * phrase rows. Empty / loading / unavailable states mirror the watch-room's
+ * transcript lifecycle.
  */
 export function TranscriptTab({ state, cues, onSeek }: TranscriptTabProps) {
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <div className="flex shrink-0 items-center justify-end border-b border-[rgba(255,255,255,0.1)] px-[16px] py-[10px]">
+    <div className="flex min-h-0 flex-1 flex-col bg-white">
+      <div className="flex shrink-0 items-center justify-between border-b border-[#f0f0f2] px-[24px] py-[14px]">
+        <span className="text-[13px] font-semibold leading-[20px] text-[#6a6a73]">
+          Transcript
+        </span>
         <button
           type="button"
           disabled
-          className="cursor-not-allowed text-[13px] font-medium text-[rgba(255,255,255,0.35)]"
+          className="hidden cursor-not-allowed rounded-[8px] border border-[#d9d9de] px-[12px] py-[6px] text-[13px] font-semibold leading-[18px] text-[#8a8a93] sm:inline-flex"
         >
           Download
         </button>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-[8px] py-[8px]">
+      <div className="min-h-0 flex-1 overflow-y-auto px-[16px] py-[12px]">
         {state === "ready" && cues.length > 0 ? (
           <div className="flex flex-col">
             {cues.map((cue, i) => (
@@ -46,17 +49,17 @@ export function TranscriptTab({ state, cues, onSeek }: TranscriptTabProps) {
             ))}
           </div>
         ) : state === "unavailable" ? (
-          <p className="px-[8px] py-[8px] text-[13px] text-[rgba(255,255,255,0.5)]">
+          <p className="rounded-[12px] bg-[#f7f7f8] px-[16px] py-[14px] text-[13px] leading-[20px] text-[#6a6a73]">
             Transcript unavailable for this video.
           </p>
         ) : state === "waiting" ? (
-          <p className="px-[8px] py-[8px] text-[13px] text-[rgba(255,255,255,0.5)]">
+          <p className="rounded-[12px] bg-[#f7f7f8] px-[16px] py-[14px] text-[13px] leading-[20px] text-[#6a6a73]">
             The transcript appears once the recording finishes processing.
           </p>
         ) : (
-          <div className="flex items-center gap-[10px] px-[8px] py-[8px] text-[13px] text-[rgba(255,255,255,0.7)]">
-            <span className="h-[16px] w-[16px] animate-spin rounded-full border-[2px] border-[rgba(255,255,255,0.2)] border-t-white" />
-            Generating transcript…
+          <div className="flex items-center gap-[10px] rounded-[12px] bg-[#f7f7f8] px-[16px] py-[14px] text-[13px] leading-[20px] text-[#6a6a73]">
+            <span className="h-[16px] w-[16px] animate-spin rounded-full border-[2px] border-[#d9d9de] border-t-[#0c66e4]" />
+            Generating transcript...
           </div>
         )}
       </div>

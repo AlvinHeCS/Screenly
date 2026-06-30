@@ -4,6 +4,7 @@ interface TitleBarProps {
   title: string;
   ownerName: string;
   dateLabel: string;
+  dateTime: string;
   viewsLabel: string;
 }
 
@@ -16,20 +17,21 @@ export function TitleBar({
   title,
   ownerName,
   dateLabel,
+  dateTime,
   viewsLabel,
 }: TitleBarProps) {
   return (
-    <div className="flex items-start justify-between gap-[16px] pb-[16px]">
+    <div className="flex items-start justify-between gap-[16px] pb-[24px]">
       <div className="min-w-0">
         <div className="contents">
           <div className="group flex min-w-0 items-center">
-            <h1 className="min-w-0 truncate text-[18px] font-bold leading-[24px] text-[#1d1c20]">
+            <h1 className="min-w-0 truncate text-[28px] font-bold leading-[34px] text-[#24242b] max-sm:text-[20px] max-sm:leading-[28px]">
               {title}
             </h1>
             <button
               type="button"
               aria-label="Edit title"
-              className="ml-[6px] shrink-0 text-[#0c66e4]"
+              className="ml-[8px] shrink-0 text-[#0c66e4] opacity-100 transition-opacity duration-[150ms] sm:opacity-0 sm:focus-visible:opacity-100 sm:group-hover:opacity-100"
             >
               <span className="block size-[16px]">
                 <span aria-hidden="true" className="block size-full">
@@ -40,7 +42,7 @@ export function TitleBar({
           </div>
         </div>
 
-        <div className="mt-[4px] flex flex-wrap items-center gap-x-[6px] gap-y-[2px] text-[13px] font-normal leading-[20px] text-[#6a6a73]">
+        <div className="mt-[2px] flex flex-wrap items-center gap-x-[6px] gap-y-[2px] text-[15px] font-normal leading-[22px] text-[#6a6a73] max-sm:text-[13px] max-sm:leading-[20px]">
           <button
             type="button"
             aria-haspopup="dialog"
@@ -50,19 +52,19 @@ export function TitleBar({
             {ownerName}
           </button>
           <span className="text-[#c7c7cd]">・</span>
-          <time>{dateLabel}</time>
+          <time dateTime={dateTime}>{dateLabel}</time>
         </div>
       </div>
 
       <button
         type="button"
-        className="flex h-fit shrink-0 items-center rounded-[8px] p-[4px] transition-colors duration-[150ms] hover:bg-[#f4f4f6]"
+        className="mt-[4px] hidden h-fit shrink-0 items-center rounded-[8px] border border-[#d9d9de] bg-white p-[4px] shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-colors duration-[150ms] hover:bg-[#f7f7f8] sm:flex"
       >
-        <span className="flex h-[28px] items-center">
+        <span className="flex h-[34px] items-center">
           <span className="mx-[8px] flex items-center gap-[8px]">
             <span
               aria-hidden="true"
-              className="block size-[24px] text-[#09326c]"
+              className="block size-[28px] text-[#09326c]"
             >
               <svg width="100%" height="100%" viewBox="0 0 40 40" fill="none">
                 <circle
@@ -85,7 +87,7 @@ export function TitleBar({
                 />
               </svg>
             </span>
-            <span className="whitespace-nowrap text-[13px] font-medium leading-[20px] text-[#6a6a73]">
+            <span className="whitespace-nowrap pr-[4px] text-[15px] font-semibold leading-[22px] text-[#42424a]">
               {viewsLabel}
             </span>
           </span>

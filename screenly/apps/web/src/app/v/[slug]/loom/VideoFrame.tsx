@@ -12,6 +12,8 @@ interface VideoFrameProps {
   posterMessage?: string;
   /** Forwarded to the iframe so the parent can drive the Stream player (seek). */
   iframeRef?: Ref<HTMLIFrameElement>;
+  /** Notifies the parent when the iframe has loaded so queued seeks can flush. */
+  onPlayerLoad?: () => void;
 }
 
 /**
@@ -25,6 +27,7 @@ export function VideoFrame({
   durationLabel,
   posterMessage,
   iframeRef,
+  onPlayerLoad,
 }: VideoFrameProps) {
   return (
     <div className="relative min-w-0 flex-1 bg-black">
@@ -36,6 +39,7 @@ export function VideoFrame({
             title={title}
             allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
             allowFullScreen
+            onLoad={onPlayerLoad}
             className="absolute inset-0 h-full w-full border-0"
           />
         ) : (
