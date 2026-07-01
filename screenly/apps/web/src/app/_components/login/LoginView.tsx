@@ -9,7 +9,7 @@ import { LoginNavBar } from "./LoginNavBar";
 import { OAuthButton } from "./OAuthButton";
 import { OrDivider } from "./OrDivider";
 
-// Loom login screen. Only Google is wired to the real auth flow; the remaining
+// Screenly login screen. Only Google is wired to the real auth flow; the remaining
 // providers are present for visual parity but are not functional yet.
 export function LoginView() {
   return (
@@ -19,7 +19,7 @@ export function LoginView() {
       <main className="flex flex-1 items-center justify-center px-[20px] py-[40px]">
         <div className="w-full max-w-[400px]">
           <h1 className="mb-[32px] text-center text-[28px] font-bold leading-[1.2] text-[#16161D]">
-            Log in to Loom
+            Log in to Screenly
           </h1>
 
           <div className="mb-[24px] flex w-full flex-col gap-[12px]">
@@ -59,22 +59,12 @@ export function LoginView() {
 
           <p className="text-[13px] leading-[1.5] text-[#6B6B76]">
             By signing up, you acknowledge that you have read and understood,
-            and agree to Atlassian&rsquo;s{" "}
-            <a
-              href="https://www.atlassian.com/legal/atlassian-customer-agreement"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[#625DF5] hover:underline"
-            >
+            and agree to Screenly&rsquo;s{" "}
+            <a href="/terms" className="text-[#1868DB] hover:underline">
               Terms
             </a>{" "}
             and{" "}
-            <a
-              href="https://www.atlassian.com/legal/privacy-policy"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[#625DF5] hover:underline"
-            >
+            <a href="/privacy" className="text-[#1868DB] hover:underline">
               Privacy Policy
             </a>
             .
@@ -83,12 +73,7 @@ export function LoginView() {
           <div className="mt-[24px]">
             <span className="block text-center text-[14px] text-[#8A8A94]">
               Can&rsquo;t log in?{" "}
-              <a
-                href="https://support.atlassian.com/loom/docs/cant-access-my-account/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[#625DF5] hover:underline"
-              >
+              <a href="/support" className="text-[#1868DB] hover:underline">
                 Troubleshoot
               </a>
               .

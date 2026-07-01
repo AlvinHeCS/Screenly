@@ -20,7 +20,7 @@ export function OAuthButton({
     <button
       type={type}
       aria-label={ariaLabel}
-      className="relative flex h-[48px] w-full items-center justify-center rounded-[8px] border border-[#DCDCE3] bg-white text-[15px] font-medium text-[#16161D] transition-colors duration-150 hover:bg-[#F4F5F7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#625DF5]"
+      className="relative flex h-[48px] w-full items-center justify-center rounded-[8px] border border-[#DCDCE3] bg-white text-[15px] font-medium text-[#16161D] transition-colors duration-150 hover:bg-[#F4F5F7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1868DB]"
     >
       <span className="absolute left-[16px] flex items-center text-[#16161D]">
         {icon}

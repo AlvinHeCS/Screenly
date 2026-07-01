@@ -17,14 +17,14 @@ export function EmailSignInForm() {
             placeholder="name@company.com"
             id="email"
             name="email"
-            className="h-[48px] w-full rounded-[8px] border border-[#DCDCE3] bg-white px-[16px] text-[15px] text-[#16161D] placeholder:text-[#6B6B76] focus:border-[#625DF5] focus:outline-none focus:ring-1 focus:ring-[#625DF5]"
+            className="h-[48px] w-full rounded-[8px] border border-[#DCDCE3] bg-white px-[16px] text-[15px] text-[#16161D] placeholder:text-[#6B6B76] focus:border-[#1868DB] focus:outline-none focus:ring-1 focus:ring-[#1868DB]"
           />
         </div>
         <button
           id="email-signup-button"
           type="submit"
           disabled
-          className="flex h-[48px] w-full items-center justify-center rounded-[8px] bg-[#625DF5] text-[15px] font-semibold text-white transition-colors duration-150 hover:bg-[#514CDB] disabled:cursor-not-allowed disabled:bg-[#F1F1F4] disabled:text-[#A5A5B0] disabled:hover:bg-[#F1F1F4]"
+          className="flex h-[48px] w-full items-center justify-center rounded-[8px] bg-[#1868DB] text-[15px] font-semibold text-white transition-colors duration-150 hover:bg-[#1558BC] disabled:cursor-not-allowed disabled:bg-[#F1F1F4] disabled:text-[#A5A5B0] disabled:hover:bg-[#F1F1F4]"
         >
           <span>Continue</span>
         </button>
