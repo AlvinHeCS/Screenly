@@ -4,7 +4,6 @@ import { useRecorder } from "./RecorderContext";
 import { PauseIcon } from "./icons/PauseIcon";
 import { PlayIcon } from "./icons/PlayIcon";
 import { RestartIcon } from "./icons/RestartIcon";
-import { RewindTrimIcon } from "./icons/RewindTrimIcon";
 import { StopSquareIcon } from "./icons/StopSquareIcon";
 import { TrashIcon } from "./icons/TrashIcon";
 
@@ -36,8 +35,6 @@ export function RecordingControls() {
 
   const buttonClass =
     "inline-flex h-[28px] w-[28px] cursor-pointer items-center justify-center rounded-[6px] bg-transparent p-0 text-white transition-colors duration-200 hover:bg-[hsla(0,0%,100%,0.1)]";
-  const disabledClass =
-    "inline-flex h-[28px] w-[28px] cursor-not-allowed items-center justify-center bg-transparent p-0 text-[hsla(225,5%,33%,1)]";
 
   const minutes = Math.floor(elapsedSec / 60);
   const seconds = elapsedSec % 60;
@@ -101,17 +98,6 @@ export function RecordingControls() {
         <TrashIcon className="h-[16px] w-[16px]" />
       </button>
 
-      {/* Divider separating Rewind/Trim (disabled — editing is out of scope). */}
-      <div className="h-[1px] w-[28px] bg-[hsla(0,0%,100%,0.1)]" />
-
-      <button
-        type="button"
-        disabled
-        aria-label="Rewind and Trim Recording"
-        className={disabledClass}
-      >
-        <RewindTrimIcon className="h-[16px] w-[16px]" />
-      </button>
     </div>
   );
 }

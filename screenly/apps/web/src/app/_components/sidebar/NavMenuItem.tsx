@@ -36,37 +36,45 @@ export function NavMenuItem({
   trailing,
   dim = false,
 }: NavMenuItemProps) {
+  const className = `block text-[14px] leading-[1.57] no-underline ${
+    active ? "text-[hsla(215.9,79.9%,41%,1)]" : "text-[hsla(228,6%,17%,1)]"
+  } ${dim ? "opacity-60" : ""} cursor-pointer`;
+
+  const content = (
+    <>
+      {/* css-2m39qo: grid; align-items:center; grid-auto-flow:column. The 1fr auto
+          track makes the label column fill the width; trailing takes the auto column. */}
+      <div className="grid grid-flow-col grid-cols-[1fr_auto] items-center">
+        {/* navigation_root_mPG navigation_menuItemInner_Ljz (best-effort padding/hover) */}
+        <span
+          className={`flex w-full items-center rounded-[8px] px-[8px] py-[7px] transition-colors ${
+            active ? "bg-[#deeafa]" : "hover:bg-[#0515240f]"
+          }`}
+        >
+          {/* css-1a7lzif: color:currentcolor */}
+          <span className="block shrink-0 text-current">{icon}</span>
+          {/* css-1w3ibup: 8px spacer */}
+          <span aria-hidden className="block pr-[8px]" />
+          {/* navigation_text_JrS > navigation_linkTitle_vzf css-16fnn59 */}
+          <span className="block overflow-hidden">
+            <span className="block overflow-hidden text-ellipsis whitespace-nowrap text-[14px] font-medium leading-[1.57]">
+              {label}
+            </span>
+          </span>
+        </span>
+        {trailing}
+      </div>
+    </>
+  );
+
   return (
     <div className="block align-middle">
       <a
         href={href}
         aria-current={active ? "page" : undefined}
-        className={`block cursor-pointer text-[14px] leading-[1.57] no-underline ${
-          active ? "text-[hsla(215.9,79.9%,41%,1)]" : "text-[hsla(228,6%,17%,1)]"
-        } ${dim ? "opacity-60" : ""}`}
+        className={className}
       >
-        {/* css-2m39qo: grid; align-items:center; grid-auto-flow:column. The 1fr auto
-            track makes the label column fill the width; trailing takes the auto column. */}
-        <div className="grid grid-flow-col grid-cols-[1fr_auto] items-center">
-          {/* navigation_root_mPG navigation_menuItemInner_Ljz (best-effort padding/hover) */}
-          <span
-            className={`flex w-full items-center rounded-[8px] px-[8px] py-[7px] transition-colors ${
-              active ? "bg-[#deeafa]" : "hover:bg-[#0515240f]"
-            }`}
-          >
-            {/* css-1a7lzif: color:currentcolor */}
-            <span className="block shrink-0 text-current">{icon}</span>
-            {/* css-1w3ibup: 8px spacer */}
-            <span aria-hidden className="block pr-[8px]" />
-            {/* navigation_text_JrS > navigation_linkTitle_vzf css-16fnn59 */}
-            <span className="block overflow-hidden">
-              <span className="block overflow-hidden text-ellipsis whitespace-nowrap text-[14px] font-medium leading-[1.57]">
-                {label}
-              </span>
-            </span>
-          </span>
-          {trailing}
-        </div>
+        {content}
       </a>
     </div>
   );

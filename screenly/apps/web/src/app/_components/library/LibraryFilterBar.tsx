@@ -1,10 +1,6 @@
-import { ChevronDownIcon } from "./icons/ChevronDownIcon";
-
 /**
  * The Loom "Videos" library header row (css-1jds50g): an H2 "Videos" heading on
- * the left and three decorative filter controls ("Video type", "Upload date",
- * and a "Sort by / Newest to Oldest" control) on the right, each ending in a
- * ChevronDownIcon.
+ * the left.
  *
  * This component owns ONLY the css-1jds50g header row. The section wrapper
  * (css-1c4s23w) and the trailing css-13bsqo spacer are owned by `LibraryView`,
@@ -40,95 +36,6 @@ export function LibraryFilterBar() {
         </h2>
       </div>
 
-      {/* my-library_scrollingButtonsBar_UvQ — reconstructed: 16px-gap flex row holding
-          css-13yqqo, the Upload-date wrapper and css-cssveg as three flat siblings. */}
-      <div className="flex flex-wrap items-center gap-[16px]">
-        {/* css-13yqqo (had wrap="wrap") — wraps ONLY the Video type group */}
-        <div className="flex flex-wrap items-center gap-[16px]">
-          {/* css-1xt45hq (had wrap="wrap") */}
-          <div className="flex flex-wrap items-center gap-[8px]">
-            {/* css-je45kk (reconstructed: plain wrapper, no styles) */}
-            <div>
-              {/* unclassed structural wrapper */}
-              <div>
-                {/* filter-bar_filterButton_EEC (reconstructed no-op) css-1delz3x; had width="auto" */}
-                <button
-                  type="button"
-                  aria-label="Video type"
-                  aria-expanded="false"
-                  aria-haspopup="dialog"
-                  className="inline-flex h-[32px] min-w-[32px] cursor-pointer appearance-none items-center justify-center whitespace-nowrap rounded-[6px] border border-[hsla(252,13%,46%,0.25)] bg-transparent px-[12px] py-0 align-middle text-[14px] font-medium leading-[1.57] tracking-normal text-[hsla(228,6%,17%,1)] no-underline transition-[background,border-color] duration-[600ms] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[1px] focus-visible:outline-[hsla(216.1,81.4%,60%,1)]"
-                >
-                  {/* css-vgmi1o (reconstructed: plain label span) */}
-                  <span>Video type</span>
-                  {/* css-1puqwlo */}
-                  <span className="pl-[6px]">
-                    {/* css-svtqel (had color="currentColor" size="2") */}
-                    <span className="block text-current">
-                      {/* original: <span aria-hidden="true" data-testid="ads-refreshed-icon"><svg viewBox="-2 -2 16 16">...</svg></span> */}
-                      <ChevronDownIcon className="block h-[16px] w-[16px] p-[8%]" />
-                    </span>
-                  </span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* "Upload date" wrapper — sibling of css-13yqqo */}
-        <div>
-          {/* css-1delz3x; had width="auto" (no aria-label in source) */}
-          <button
-            type="button"
-            className="inline-flex h-[32px] min-w-[32px] cursor-pointer appearance-none items-center justify-center whitespace-nowrap rounded-[6px] border border-[hsla(252,13%,46%,0.25)] bg-transparent px-[12px] py-0 align-middle text-[14px] font-medium leading-[1.57] tracking-normal text-[hsla(228,6%,17%,1)] no-underline transition-[background,border-color] duration-[600ms] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[1px] focus-visible:outline-[hsla(216.1,81.4%,60%,1)]"
-          >
-            {/* css-vgmi1o (reconstructed) */}
-            <span>Upload date</span>
-            {/* css-1puqwlo */}
-            <span className="pl-[6px]">
-              {/* css-svtqel */}
-              <span className="block text-current">
-                <ChevronDownIcon className="block h-[16px] w-[16px] p-[8%]" />
-              </span>
-            </span>
-          </button>
-        </div>
-
-        {/* css-cssveg — sibling of css-13yqqo */}
-        <div className="relative">
-          {/* unclassed presentation wrapper (source: downshift listbox toggle) */}
-          {/* eslint-disable-next-line jsx-a11y/role-supports-aria-props -- faithful copy of source markup */}
-          <div
-            role="presentation"
-            aria-haspopup="listbox"
-            aria-labelledby="downshift-1-label"
-          >
-            {/* unclassed structural wrapper */}
-            <div>
-              {/* css-1delz3x; had width="auto" */}
-              <button
-                type="button"
-                role="button"
-                aria-label="Sort by, selected value is Newest to Oldest"
-                aria-haspopup="true"
-                data-toggle="true"
-                aria-expanded="false"
-                className="inline-flex h-[32px] min-w-[32px] cursor-pointer appearance-none items-center justify-center whitespace-nowrap rounded-[6px] border border-[hsla(252,13%,46%,0.25)] bg-transparent px-[12px] py-0 align-middle text-[14px] font-medium leading-[1.57] tracking-normal text-[hsla(228,6%,17%,1)] no-underline transition-[background,border-color] duration-[600ms] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[1px] focus-visible:outline-[hsla(216.1,81.4%,60%,1)]"
-              >
-                {/* css-vgmi1o (reconstructed) */}
-                <span>Newest to Oldest</span>
-                {/* css-1puqwlo */}
-                <span className="pl-[6px]">
-                  {/* css-svtqel */}
-                  <span className="block text-current">
-                    <ChevronDownIcon className="block h-[16px] w-[16px] p-[8%]" />
-                  </span>
-                </span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

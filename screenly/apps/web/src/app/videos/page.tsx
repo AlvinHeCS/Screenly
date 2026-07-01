@@ -29,7 +29,7 @@ export default async function VideosPage() {
         <div className="flex h-screen overflow-hidden bg-white">
           <Sidebar />
           <div className="flex min-w-0 flex-1 flex-col overflow-y-auto">
-            <Header />
+            <Header userName={session.user.name ?? session.user.email ?? "User"} />
             {/* mainContentSection — `--pagePadding` is read by the tab bar's
                 negative-margin bleed in LibraryTabs; 24px horizontal gutter. */}
             <main

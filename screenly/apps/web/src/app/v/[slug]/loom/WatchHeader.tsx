@@ -1,37 +1,22 @@
 import Link from "next/link";
 
-import { Avatar } from "./Avatar";
+import { ScreenlyLogoIcon } from "~/app/_components/sidebar/icons/ScreenlyLogoIcon";
+
 import { HeaderIconButton } from "./HeaderIconButton";
-import { ShareButton } from "./ShareButton";
-import { UsageMeter } from "./UsageMeter";
-import { LoomLogo } from "./icons/LoomLogo";
 import { MainNavIcon } from "./icons/MainNavIcon";
-import { NotificationsIcon } from "./icons/NotificationsIcon";
-import { SearchIcon } from "./icons/SearchIcon";
-import { ToggleActionsIcon } from "./icons/ToggleActionsIcon";
 
 interface WatchHeaderProps {
-  usageLabel: string;
-  notificationsLabel: string;
-  avatarSrc?: string;
-  avatarAlt: string;
-  avatarInitials: string;
   isMainNavOpen?: boolean;
   mainNavControlsId?: string;
   onMainNavClick?: () => void;
 }
 
 /**
- * Loom's sticky share-video header: main-nav toggle + logo on the left, then
+ * Sticky share-video header: main-nav toggle + logo on the left, then
  * the usage meter, Share split button, actions/search/notifications, and the
  * account avatar on the right.
  */
 export function WatchHeader({
-  usageLabel,
-  notificationsLabel,
-  avatarSrc,
-  avatarAlt,
-  avatarInitials,
   isMainNavOpen = false,
   mainNavControlsId,
   onMainNavClick,
@@ -54,51 +39,18 @@ export function WatchHeader({
         <MainNavIcon className="h-[16px] w-[16px]" />
       </HeaderIconButton>
 
-      <Link href="/" aria-label="Loom home" className="flex items-center">
-        <LoomLogo className="h-[24px] w-auto" />
+      <Link
+        href="/"
+        aria-label="Screenly home"
+        className="flex items-center gap-[6px]"
+      >
+        <ScreenlyLogoIcon className="h-[24px] w-[24px] shrink-0" />
+        <span className="text-[18px] font-semibold leading-none text-[#292a2e]">
+          Screenly
+        </span>
       </Link>
 
-      <div className="ml-auto flex items-center gap-[16px]">
-        <UsageMeter label={usageLabel} />
-        <ShareButton />
-
-        <div className="flex items-center gap-[4px]">
-          <HeaderIconButton label="Toggle actions">
-            <ToggleActionsIcon className="h-[16px] w-[16px]" />
-          </HeaderIconButton>
-          <HeaderIconButton label="Search">
-            <SearchIcon className="h-[16px] w-[16px]" />
-          </HeaderIconButton>
-          <div className="relative">
-            <HeaderIconButton label="Notifications">
-              <NotificationsIcon className="h-[16px] w-[16px]" />
-            </HeaderIconButton>
-            <span className="pointer-events-none absolute -right-[2px] -top-[2px] flex h-[16px] min-w-[16px] items-center justify-center rounded-full bg-[#e5484d] px-[4px] text-[10px] font-bold leading-none text-white">
-              {notificationsLabel}
-            </span>
-          </div>
-        </div>
-
-        <button
-          type="button"
-          aria-label={`Account menu for ${avatarAlt}`}
-          className="ml-[8px] flex h-[32px] w-[32px] shrink-0 overflow-hidden rounded-full"
-        >
-          {avatarSrc ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              alt={avatarAlt}
-              src={avatarSrc}
-              className="h-[32px] w-[32px] max-w-full rounded-full object-cover"
-            />
-          ) : (
-            <Avatar
-              initials={avatarInitials}
-              className="h-[32px] w-[32px] bg-[#2c6ae4] text-[13px]"
-            />
-          )}
-        </button>
-      </div>
+      <div className="ml-auto" />
     </header>
   );
 }

@@ -1,13 +1,11 @@
 "use client";
 
 import { useRecorder } from "./RecorderContext";
-import { EffectsRow } from "./EffectsRow";
 import { PanelHeader } from "./PanelHeader";
 import { RecorderOptionRow } from "./RecorderOptionRow";
 import { RecordingLimitNote } from "./RecordingLimitNote";
 import { StartRecordingButton } from "./StartRecordingButton";
 import { MicrophoneIcon } from "./icons/MicrophoneIcon";
-import { ScreenWindowIcon } from "./icons/ScreenWindowIcon";
 import { VideoCameraIcon } from "./icons/VideoCameraIcon";
 
 interface PreRecordingPanelProps {
@@ -47,11 +45,6 @@ export function PreRecordingPanel({ onClose }: PreRecordingPanelProps) {
       <div className="px-[16px] pb-[16px]">
         <div className="flex flex-col gap-[8px]">
           <RecorderOptionRow
-            ariaLabel="Recording options"
-            label="Window"
-            icon={<ScreenWindowIcon className="h-[16px] w-[16px]" />}
-          />
-          <RecorderOptionRow
             ariaLabel="Toggle camera"
             label="MacBook Air Camera (0000:0001)"
             icon={<VideoCameraIcon className="h-[16px] w-[16px]" />}
@@ -83,8 +76,6 @@ export function PreRecordingPanel({ onClose }: PreRecordingPanelProps) {
         <div className="mt-[8px]">
           <RecordingLimitNote />
         </div>
-
-        <EffectsRow />
       </div>
     </div>
   );

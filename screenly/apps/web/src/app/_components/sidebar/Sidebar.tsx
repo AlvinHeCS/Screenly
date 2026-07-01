@@ -3,7 +3,6 @@
 import { RecordButton } from "./RecordButton";
 import { SidebarHeader } from "./SidebarHeader";
 import { SidebarNav } from "./SidebarNav";
-import { WorkspaceSelector } from "./WorkspaceSelector";
 
 interface SidebarProps {
   onCollapse?: () => void;
@@ -31,7 +30,6 @@ export function Sidebar({ onCollapse }: SidebarProps) {
       <SidebarHeader onCollapse={onCollapse} />
       {/* css-202ccx */}
       <div aria-hidden className="block pb-[24px] align-middle" />
-      <WorkspaceSelector />
       <SidebarNav />
       <RecordButton />
     </div>

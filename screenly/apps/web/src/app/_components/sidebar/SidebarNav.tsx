@@ -1,28 +1,12 @@
-import { NavMenuItem } from "./NavMenuItem";
-import { SettingsMenu } from "./SettingsMenu";
-import { SpacesSection } from "./SpacesSection";
-import { SuggestedSection } from "./SuggestedSection";
-import { ForYouIcon } from "./icons/ForYouIcon";
-import { LibraryIcon } from "./icons/LibraryIcon";
-import { MeetingsIcon } from "./icons/MeetingsIcon";
-import { RecentIcon } from "./icons/RecentIcon";
-import { WatchLaterIcon } from "./icons/WatchLaterIcon";
+"use client";
 
-/** css-1n7vqrn (py 20px) wrapping css-1hfrlgz (1px bottom border #0B120E24). */
-function Divider() {
-  return (
-    <div className="block py-[20px] align-middle">
-      <div className="border-b border-[#0B120E24]" />
-    </div>
-  );
-}
+import { usePathname } from "next/navigation";
+
+import { NavMenuItem } from "./NavMenuItem";
+import { LibraryIcon } from "./icons/LibraryIcon";
 
 const NAV_ITEMS = [
-  { label: "For you", href: "/home", Icon: ForYouIcon, active: false },
-  { label: "Library", href: "/looms", Icon: LibraryIcon, active: true },
-  { label: "Meetings", href: "/meetings", Icon: MeetingsIcon, active: false },
-  { label: "Watch later", href: "/watch-later", Icon: WatchLaterIcon, active: false },
-  { label: "Recent", href: "/history", Icon: RecentIcon, active: false },
+  { label: "Library", href: "/videos", Icon: LibraryIcon },
 ] as const;
 
 /**
@@ -38,6 +22,8 @@ const NAV_ITEMS = [
  * in the recorded stylesheet and adds no resolved properties.
  */
 export function SidebarNav() {
+  const pathname = usePathname();
+
   return (
     <nav aria-label="side">
       {/* css-198ncd */}
@@ -47,26 +33,22 @@ export function SidebarNav() {
           id="intercom-destination-menu"
           className="m-0 grid list-none grid-flow-row grid-cols-[1fr] items-center justify-start gap-[2px] p-0 pt-[20px]"
         >
-          {NAV_ITEMS.map(({ label, href, Icon, active }) => (
+          {NAV_ITEMS.map(({ label, href, Icon }) => (
             <li key={href}>
               <NavMenuItem
                 href={href}
                 label={label}
-                active={active}
+                active={isActivePath(pathname, href)}
                 icon={<Icon className="h-[20px] w-[20px] p-[8%]" />}
               />
             </li>
           ))}
-          <li>
-            <SettingsMenu />
-          </li>
         </ul>
-
-        <Divider />
-        <SpacesSection />
-        <Divider />
-        <SuggestedSection />
       </div>
     </nav>
   );
+}
+
+function isActivePath(pathname: string, href: string) {
+  return pathname === href || pathname.startsWith(`${href}/`);
 }

@@ -73,6 +73,23 @@ const COUNTDOWN_FROM = 3;
 const BUBBLE_DIAMETER_RATIO = 0.26;
 const BUBBLE_MARGIN_RATIO = 0.03;
 
+type ChromeDisplayMediaOptions = DisplayMediaStreamOptions & {
+  preferCurrentTab?: boolean;
+  selfBrowserSurface?: "include" | "exclude";
+  surfaceSwitching?: "include" | "exclude";
+  systemAudio?: "include" | "exclude";
+};
+
+const DISPLAY_MEDIA_OPTIONS: ChromeDisplayMediaOptions = {
+  video: { frameRate: { ideal: FPS } },
+  audio: true,
+  // Chrome-specific hints. Other browsers ignore unknown dictionary keys.
+  preferCurrentTab: false,
+  selfBrowserSurface: "exclude",
+  surfaceSwitching: "include",
+  systemAudio: "include",
+};
+
 /** Best WebM profile this browser can record, VP9 → VP8 → bare WebM. */
 function pickMimeType(): string | undefined {
   if (typeof MediaRecorder === "undefined") return undefined;
@@ -176,6 +193,7 @@ export function useRecorderEngine(): RecorderEngine {
   const drawIntervalRef = useRef<number | null>(null);
   const visibilityHandlerRef = useRef<(() => void) | null>(null);
   const countdownTimerRef = useRef<number | null>(null);
+  const pendingRecordingStartRafsRef = useRef<number[]>([]);
   const elapsedTimerRef = useRef<number | null>(null);
   const elapsedBaseMsRef = useRef(0);
   const segmentStartRef = useRef(0);
@@ -278,6 +296,13 @@ export function useRecorderEngine(): RecorderEngine {
       window.clearInterval(countdownTimerRef.current);
       countdownTimerRef.current = null;
     }
+  }, []);
+
+  const clearPendingRecordingStart = useCallback(() => {
+    pendingRecordingStartRafsRef.current.forEach((id) =>
+      window.cancelAnimationFrame(id),
+    );
+    pendingRecordingStartRafsRef.current = [];
   }, []);
 
   const clearElapsedTimer = useCallback(() => {
@@ -473,13 +498,30 @@ export function useRecorderEngine(): RecorderEngine {
 
   const beginActualRecording = useCallback(() => {
     const recorder = recorderRef.current;
-    if (!recorder) return;
+    if (recorder?.state !== "inactive") return;
+    clearPendingRecordingStart();
     elapsedBaseMsRef.current = 0;
     setElapsedSec(0);
-    recorder.start(1000);
     goPhase("recording");
-    startElapsedTimer();
-  }, [goPhase, startElapsedTimer]);
+
+    const startAfterCountdownPaint = () => {
+      pendingRecordingStartRafsRef.current = [];
+      const current = recorderRef.current;
+      if (current?.state !== "inactive" || phaseRef.current !== "recording") {
+        return;
+      }
+      current.start(1000);
+      startElapsedTimer();
+    };
+
+    const firstFrame = window.requestAnimationFrame(() => {
+      const secondFrame = window.requestAnimationFrame(
+        startAfterCountdownPaint,
+      );
+      pendingRecordingStartRafsRef.current = [secondFrame];
+    });
+    pendingRecordingStartRafsRef.current = [firstFrame];
+  }, [clearPendingRecordingStart, goPhase, startElapsedTimer]);
 
   const beginCountdown = useCallback(() => {
     clearCountdownTimer(); // never stack two countdown intervals
@@ -577,6 +619,7 @@ export function useRecorderEngine(): RecorderEngine {
   const reset = useCallback(() => {
     runIdRef.current += 1; // invalidate any in-flight startRecording
     startingRef.current = false;
+    clearPendingRecordingStart();
     discardRecorder();
     clearCountdownTimer();
     clearElapsedTimer();
@@ -592,6 +635,7 @@ export function useRecorderEngine(): RecorderEngine {
     setCountdownValue(0);
     goPhase("idle");
   }, [
+    clearPendingRecordingStart,
     discardRecorder,
     clearCountdownTimer,
     clearElapsedTimer,
@@ -644,10 +688,8 @@ export function useRecorderEngine(): RecorderEngine {
       let screenStream: MediaStream;
       try {
         // First await off the click so it keeps the user gesture.
-        screenStream = await navigator.mediaDevices.getDisplayMedia({
-          video: { frameRate: { ideal: FPS } },
-          audio: true,
-        });
+        screenStream =
+          await navigator.mediaDevices.getDisplayMedia(DISPLAY_MEDIA_OPTIONS);
       } catch {
         if (!stale()) setErrorMessage("Screen sharing is required to record.");
         return;
@@ -785,11 +827,18 @@ export function useRecorderEngine(): RecorderEngine {
 
   const cancelCountdown = useCallback(() => {
     clearCountdownTimer();
+    clearPendingRecordingStart();
     discardRecorder();
     teardownCapture(); // keeps camera preview alive
     setCountdownValue(0);
     goPhase("preview");
-  }, [clearCountdownTimer, discardRecorder, teardownCapture, goPhase]);
+  }, [
+    clearCountdownTimer,
+    clearPendingRecordingStart,
+    discardRecorder,
+    teardownCapture,
+    goPhase,
+  ]);
 
   // `startRecording`'s screen-ended handler needs the latest stop/cancel without
   // recreating the listener; route through refs.
@@ -805,6 +854,7 @@ export function useRecorderEngine(): RecorderEngine {
     return () => {
       mountedRef.current = false; // so any in-flight start aborts post-await
       runIdRef.current += 1;
+      clearPendingRecordingStart();
       discardRecorder();
       clearCountdownTimer();
       clearElapsedTimer();
@@ -814,6 +864,7 @@ export function useRecorderEngine(): RecorderEngine {
       revokeRecordedUrl();
     };
   }, [
+    clearPendingRecordingStart,
     discardRecorder,
     clearCountdownTimer,
     clearElapsedTimer,

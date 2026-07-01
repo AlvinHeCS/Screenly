@@ -11,7 +11,7 @@ export function Avatar({ initials, className }: AvatarProps) {
   return (
     <span
       aria-hidden="true"
-      className={`inline-flex shrink-0 items-center justify-center rounded-full font-bold uppercase leading-none text-white ${className ?? ""}`}
+      className={`inline-flex shrink-0 items-center justify-center rounded-full font-medium uppercase leading-none text-white ${className ?? ""}`}
     >
       {initials}
     </span>

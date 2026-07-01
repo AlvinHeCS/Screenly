@@ -1,8 +1,9 @@
-import { NotificationBell } from "./NotificationBell";
 import { ProfileAvatar } from "./ProfileAvatar";
-import { SearchBar } from "./SearchBar";
 import { SkipNavigation } from "./SkipNavigation";
-import { VideoUsageMeter } from "./VideoUsageMeter";
+
+interface HeaderProps {
+  userName?: string;
+}
 
 /**
  * Reusable top navigation header (port of Loom's destination header).
@@ -15,25 +16,15 @@ import { VideoUsageMeter } from "./VideoUsageMeter";
  * `items:center flex`, `shrink:0`, `pl:medium`, `ml:medium`) plus the resolved
  * `--lns-*` design tokens. Drop it onto any page above the main content.
  */
-export function Header() {
+export function Header({ userName }: HeaderProps) {
   return (
     <header className="sticky top-0 z-50 w-full bg-white">
       <div>
         <SkipNavigation />
         <ul className="flex w-full items-center px-[16px]">
-          <li className="grow py-[8px] md:py-[16px]">
-            <SearchBar />
-          </li>
-          <li className="flex items-center" />
-          <li className="flex shrink-0 items-center">
-            <VideoUsageMeter />
-          </li>
-          <li className="pl-[16px]" />
-          <li className="ml-[16px]">
-            <NotificationBell />
-          </li>
+          <li className="grow py-[8px] md:py-[16px]" />
           <li id="profileBubble" className="ml-[16px]">
-            <ProfileAvatar />
+            <ProfileAvatar name={userName} />
           </li>
         </ul>
       </div>

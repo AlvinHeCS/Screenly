@@ -37,17 +37,21 @@ export function SidebarHeader({ onCollapse }: SidebarHeaderProps) {
       </div>
       {/* css-nez7wg */}
       <div className="inline-block align-middle">
-        <button
-          type="button"
-          aria-label={onCollapse ? "Close sidebar" : "Collapse sidebar"}
-          onClick={onCollapse}
-          className="relative inline-flex h-[24px] w-[24px] cursor-pointer items-center justify-center rounded-[4px] border-none bg-transparent p-0 align-middle outline outline-1 outline-transparent transition-colors duration-[600ms] hover:bg-[#0515240f] hover:duration-[300ms] active:bg-[#0b120e24]"
-        >
-          {/* css-1y53iih: colour body */}
-          <span className="block text-[hsla(228,6%,17%,1)]">
-            <CollapseSidebarIcon className="h-[18px] w-[18px] p-[8%]" />
-          </span>
-        </button>
+        {onCollapse ? (
+          <button
+            type="button"
+            aria-label="Close sidebar"
+            onClick={onCollapse}
+            className="relative inline-flex h-[24px] w-[24px] cursor-pointer items-center justify-center rounded-[4px] border-none bg-transparent p-0 align-middle outline outline-1 outline-transparent transition-colors duration-[600ms] hover:bg-[#0515240f] hover:duration-[300ms] active:bg-[#0b120e24]"
+          >
+            {/* css-1y53iih: colour body */}
+            <span className="block text-[hsla(228,6%,17%,1)]">
+              <CollapseSidebarIcon className="h-[18px] w-[18px] p-[8%]" />
+            </span>
+          </button>
+        ) : (
+          <div className="h-[24px] w-[24px]" />
+        )}
       </div>
     </div>
   );

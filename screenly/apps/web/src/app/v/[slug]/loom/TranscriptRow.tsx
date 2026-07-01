@@ -1,5 +1,3 @@
-import { CopySnippetIcon } from "./icons/CopySnippetIcon";
-
 interface TranscriptRowProps {
   timestamp: string;
   text: string;
@@ -30,13 +28,6 @@ export function TranscriptRow({
       <p className="min-w-0 flex-1 text-[14px] font-normal leading-[21px] text-[#24242b]">
         {text}
       </p>
-      <button
-        type="button"
-        aria-label="Copy snippet"
-        className="shrink-0 self-start rounded-[6px] p-[4px] text-[#8a8a93] opacity-0 transition-opacity duration-[150ms] hover:bg-white hover:text-[#24242b] group-hover:opacity-100"
-      >
-        <CopySnippetIcon className="h-[14px] w-[14px]" />
-      </button>
     </div>
   );
 }

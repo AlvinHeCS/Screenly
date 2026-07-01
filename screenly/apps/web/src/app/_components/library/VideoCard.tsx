@@ -5,9 +5,7 @@ import {
   visibilityLabel,
   initials,
 } from "./format";
-import { VideoCardHoverActions } from "./VideoCardHoverActions";
 import { VideoCardStats } from "./VideoCardStats";
-import { ChevronDownIcon } from "./icons/ChevronDownIcon";
 
 interface VideoCardProps {
   video: LibraryVideo;
@@ -42,7 +40,6 @@ export function VideoCard({ video }: VideoCardProps) {
     <div
       className="relative rounded-[8px] border border-[hsla(225.5,57%,10%,0.14)]"
       data-videoid={video.id}
-      draggable
     >
       {/* video-card_videoCardLink_Jvt radius:100 — RECONSTRUCTED: full-card share link overlay. */}
       <a
@@ -67,21 +64,6 @@ export function VideoCard({ video }: VideoCardProps) {
             // Neutral placeholder when no thumbnail is available.
             <div className="h-full w-full bg-[hsla(240,3%,12.5%,1)]" />
           )}
-
-          {/* media-card_hoverShow_EyS video-card_videoCardHoverShow_nGE
-                — RECONSTRUCTED: overlay revealed on card hover. */}
-          <div className="absolute inset-0 opacity-0 transition-opacity group-hover:opacity-100">
-            {/* theme-dark wrapper carrying dark color-mode for the overlay controls (decorative attrs). */}
-            <div
-              className="h-full w-full"
-              data-lens-theme="dark"
-              data-subtree-theme="true"
-              data-color-mode="dark"
-              data-theme="light:dark dark:dark"
-            >
-              <VideoCardHoverActions videoId={video.id} title={video.title} />
-            </div>
-          </div>
 
           {/* Pipeline overlay while the upload is still encoding on Cloudflare. */}
           {video.status !== "READY" && (
@@ -126,19 +108,9 @@ export function VideoCard({ video }: VideoCardProps) {
             It contains only the avatar and overflow:hidden author/visibility block.
             The title block is a sibling below this grid in the source DOM. */}
         <div className="grid grid-flow-col items-center justify-start gap-[8px]">
-          {/* css-l9d9x4 — avatar circle: blueDark text on white, rounded-full, 32×32, 16px text, fw 653. */}
-          <span className="relative z-0 flex h-[32px] w-[32px] items-center justify-center overflow-hidden rounded-full bg-[hsla(0,0%,100%,1)] text-[16px] font-[653] leading-none text-[hsla(216.3,69.2%,23%,1)]">
-            {video.owner.image ? (
-              // css-st051q — gravatar img: 32×32, max-w-full.
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                alt=""
-                src={video.owner.image}
-                className="h-[32px] w-[32px] max-w-full"
-              />
-            ) : (
-              initials(video.owner.name)
-            )}
+          {/* css-l9d9x4 — avatar circle reconstructed with Screenly blue initials. */}
+          <span className="relative z-0 flex h-[32px] w-[32px] items-center justify-center overflow-hidden rounded-full bg-[hsla(215.9,79.9%,41%,1)] text-[13px] font-medium leading-none text-white">
+            {initials(video.owner.name)}
           </span>
 
           {/* overflow:hidden — source wrapper around the author/date row and visibility row. */}
@@ -152,16 +124,7 @@ export function VideoCard({ video }: VideoCardProps) {
                 <div className="flex h-[18px] items-center justify-start">
                   <span>
                     <div>
-                      {/* profile-card_textLink_GSY — RECONSTRUCTED: bare author button (decorative). */}
-                      <button
-                        type="button"
-                        className="relative z-[1] flex h-[18px] cursor-pointer items-center border-none bg-transparent p-0 text-left"
-                        aria-expanded="false"
-                        aria-haspopup="dialog"
-                        aria-label={`${authorName}'s profile`}
-                        aria-hidden="false"
-                        tabIndex={0}
-                      >
+                      <span className="relative z-[1] flex h-[18px] items-center border-none bg-transparent p-0 text-left">
                         {/* css-2yt1u — height 1.125rem. */}
                         <div className="flex h-[1.125rem] items-center">
                           {/* css-xgmh0l — block, 12px, line-height 1.5, fw 500, truncate (author name). */}
@@ -169,7 +132,7 @@ export function VideoCard({ video }: VideoCardProps) {
                             {authorName}
                           </span>
                         </div>
-                      </button>
+                      </span>
                     </div>
                   </span>
                   {/* css-103pznj — 12px, line-height 1.5, fw 400, bodyDimmed (the "・6 days"). */}
@@ -187,12 +150,8 @@ export function VideoCard({ video }: VideoCardProps) {
               <span>
                 <div>
                   {/* css-nez7wg — inline-block, vertical-align middle; tabIndex 0. */}
-                  <div className="inline-block align-middle" tabIndex={0}>
-                    {/* video-card_visibilityButton_qqT — RECONSTRUCTED: bare visibility button. */}
-                    <button
-                      type="button"
-                      className="relative z-[1] cursor-pointer border-none bg-transparent p-0"
-                    >
+                  <div className="inline-block align-middle">
+                    <span className="relative z-[1] border-none bg-transparent p-0">
                       {/* css-9nto4f — grid grid-flow-col items-center justify-start gap 4px. */}
                       <div className="grid grid-flow-col items-center justify-start gap-[4px]">
                         {/* css-6ta4y4 — block, 12px, line-height 1.5, fw 400, bodyDimmed, truncate. */}
@@ -202,12 +161,8 @@ export function VideoCard({ video }: VideoCardProps) {
                         >
                           {visibilityLabel(video.visibility)}
                         </span>
-                        {/* css-1ri22re — block, color body; 12×12 chevron. */}
-                        <span className="block text-[hsla(228,6%,17%,1)]">
-                          <ChevronDownIcon className="block h-[12px] w-[12px]" />
-                        </span>
                       </div>
-                    </button>
+                    </span>
                   </div>
                 </div>
               </span>
