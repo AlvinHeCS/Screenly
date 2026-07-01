@@ -14,9 +14,9 @@ import { api } from "~/trpc/server";
 export default async function VideosPage() {
   const session = await auth();
 
-  // Guard the route: anyone not signed in gets bounced to the marketing page.
+  // Guard the route: anyone not signed in gets bounced to the login page.
   if (!session?.user) {
-    redirect("/");
+    redirect("/login");
   }
 
   // The video collection — newest first, scoped to the caller's workspace.
