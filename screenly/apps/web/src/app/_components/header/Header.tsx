@@ -1,8 +1,10 @@
 import { ProfileAvatar } from "./ProfileAvatar";
+import { SearchBar } from "./SearchBar";
 import { SkipNavigation } from "./SkipNavigation";
 
 interface HeaderProps {
   userName?: string;
+  searchQuery?: string;
 }
 
 /**
@@ -16,13 +18,15 @@ interface HeaderProps {
  * `items:center flex`, `shrink:0`, `pl:medium`, `ml:medium`) plus the resolved
  * `--lns-*` design tokens. Drop it onto any page above the main content.
  */
-export function Header({ userName }: HeaderProps) {
+export function Header({ userName, searchQuery }: HeaderProps) {
   return (
     <header className="sticky top-0 z-50 w-full bg-white">
       <div>
         <SkipNavigation />
         <ul className="flex w-full items-center px-[16px]">
-          <li className="grow py-[8px] md:py-[16px]" />
+          <li className="grow py-[8px] md:py-[16px]">
+            <SearchBar initialQuery={searchQuery} />
+          </li>
           <li id="profileBubble" className="ml-[16px]">
             <ProfileAvatar name={userName} />
           </li>
