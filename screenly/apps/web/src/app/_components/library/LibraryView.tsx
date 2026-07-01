@@ -24,7 +24,12 @@ import { VideoGrid } from "./VideoGrid";
  * css-1c4s23w (A and D) is one of the four Emotion classes the style guide could
  * not record; reconstructed as a plain `block` section wrapper.
  */
-export function LibraryView({ videos }: { videos: LibraryVideo[] }) {
+interface LibraryViewProps {
+  videos: LibraryVideo[];
+  searchQuery?: string;
+}
+
+export function LibraryView({ videos, searchQuery }: LibraryViewProps) {
   // Videos still encoding on Cloudflare — polled client-side so they flip to
   // Ready without a manual refresh (dev fallback for the Stream webhook).
   const pendingIds = videos
@@ -54,7 +59,7 @@ export function LibraryView({ videos }: { videos: LibraryVideo[] }) {
         <LibraryFilterBar />
         {/* css-13bsqo — 16px spacer between the header row and the grid. */}
         <div className="block pb-[16px] align-middle" />
-        <VideoGrid videos={videos} />
+        <VideoGrid videos={videos} searchQuery={searchQuery} />
       </div>
     </>
   );

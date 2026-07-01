@@ -52,6 +52,7 @@ export function WatchView({
 
   const utils = api.useUtils();
   const syncTranscript = api.video.syncTranscript.useMutation();
+  const updateTitle = api.video.updateTitle.useMutation();
 
   // Stable refs so the polling effect (which only re-subscribes on `pending`)
   // always sees the latest data + mutate fn instead of a stale closure.
@@ -199,6 +200,18 @@ export function WatchView({
     [attachPlayer, seekPlayer],
   );
 
+  const handleTitleChange = useCallback(
+    async (title: string) => {
+      const updated = await updateTitle.mutateAsync({ slug, title });
+      setData((current) => ({
+        ...current,
+        title: updated.title,
+        canEditTitle: true,
+      }));
+    },
+    [slug, updateTitle],
+  );
+
   const ownerName = data.owner.name ?? "Unknown";
   const transcriptState: "loading" | "ready" | "unavailable" | "waiting" =
     data.status !== "READY"
@@ -221,6 +234,8 @@ export function WatchView({
       dateLabel={formatRelativeDate(data.createdAt)}
       dateTime={toIsoDateTime(data.createdAt)}
       canCreateShareLink={data.canCreateShareLink}
+      canEditTitle={data.canEditTitle}
+      onTitleChange={handleTitleChange}
       showHeader={!viewerName}
       embedUrl={
         isReady

@@ -392,6 +392,37 @@ export const videoRouter = createTRPCRouter({
     }),
 
   /**
+   * Rename a recording from the watch room. Owner-only: non-owners get NOT_FOUND
+   * so private/link slugs don't reveal ownership details.
+   */
+  updateTitle: protectedProcedure
+    .input(
+      z.object({
+        slug: z.string().min(1),
+        title: z.string().trim().min(1).max(200),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const video = await ctx.db.video.findFirst({
+        where: {
+          slug: input.slug,
+          ownerId: ctx.session.user.id,
+          status: { not: "DELETED" },
+        },
+        select: { id: true },
+      });
+      if (!video) throw new TRPCError({ code: "NOT_FOUND" });
+
+      const updated = await ctx.db.video.update({
+        where: { id: video.id },
+        data: { title: input.title },
+        select: { title: true },
+      });
+
+      return { title: updated.title };
+    }),
+
+  /**
    * Poll Cloudflare for a still-processing video and reconcile the DB row
    * (status, duration, thumbnail). Used as the dev fallback when the webhook
    * can't reach localhost; safe to call repeatedly.
@@ -484,6 +515,7 @@ export const videoRouter = createTRPCRouter({
       return {
         id: video.id,
         title: video.title,
+        canEditTitle: ctx.session?.user?.id === video.ownerId,
         status: video.status,
         cloudflareUid: video.cloudflareUid,
         durationSec: video.durationSec,

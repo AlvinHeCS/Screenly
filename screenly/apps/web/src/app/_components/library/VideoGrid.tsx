@@ -14,9 +14,14 @@ import { VideoCard } from "./VideoCard";
  *
  * When `videos` is empty, renders `<EmptyState />` instead of the `<ul>`.
  */
-export function VideoGrid({ videos }: { videos: LibraryVideo[] }) {
+interface VideoGridProps {
+  videos: LibraryVideo[];
+  searchQuery?: string;
+}
+
+export function VideoGrid({ videos, searchQuery }: VideoGridProps) {
   if (videos.length === 0) {
-    return <EmptyState />;
+    return <EmptyState searchQuery={searchQuery} />;
   }
 
   return (

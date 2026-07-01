@@ -14,6 +14,8 @@ export interface WatchRoomProps {
   dateTime: string;
   canCreateShareLink: boolean;
   showHeader?: boolean;
+  canEditTitle?: boolean;
+  onTitleChange?: (title: string) => Promise<void> | void;
   embedUrl?: string;
   posterMessage?: string;
   transcriptState: "loading" | "ready" | "unavailable" | "waiting";
@@ -38,6 +40,8 @@ export function WatchRoom({
   dateTime,
   canCreateShareLink,
   showHeader = true,
+  canEditTitle,
+  onTitleChange,
   embedUrl,
   posterMessage,
   transcriptState,
@@ -67,6 +71,8 @@ export function WatchRoom({
             dateLabel={dateLabel}
             dateTime={dateTime}
             canCreateShareLink={canCreateShareLink}
+            canEditTitle={canEditTitle}
+            onTitleChange={onTitleChange}
           />
 
           <div className="mx-auto w-full max-w-[1280px]">

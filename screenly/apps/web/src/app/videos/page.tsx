@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@screenly/auth";
 
 import { Header } from "~/app/_components/header/Header";
+import { visibilityLabel } from "~/app/_components/library/format";
 import { LibraryView } from "~/app/_components/library/LibraryView";
 import { ProfileMenuOverlay } from "~/app/_components/profile-menu/ProfileMenuOverlay";
 import { ProfileMenuProvider } from "~/app/_components/profile-menu/ProfileMenuProvider";
@@ -11,8 +12,17 @@ import { RecorderProvider } from "~/app/_components/recorder/RecorderProvider";
 import { Sidebar } from "~/app/_components/sidebar/Sidebar";
 import { api } from "~/trpc/server";
 
-export default async function VideosPage() {
+interface VideosPageProps {
+  searchParams?: Promise<{
+    q?: string | string[];
+  }>;
+}
+
+export default async function VideosPage({ searchParams }: VideosPageProps) {
   const session = await auth();
+  const resolvedSearchParams = await searchParams;
+  const searchQuery = getSearchQuery(resolvedSearchParams?.q);
+  const normalizedSearchQuery = normalizeSearchText(searchQuery);
 
   // Guard the route: anyone not signed in gets bounced to the login page.
   if (!session?.user) {
@@ -22,6 +32,19 @@ export default async function VideosPage() {
   // The video collection — newest first, scoped to the caller's workspace.
   // Returns [] when the user has no videos/workspace, which renders the empty state.
   const videos = await api.video.list();
+  const filteredVideos = normalizedSearchQuery
+    ? videos.filter((video) =>
+        [
+          video.title,
+          video.owner.name,
+          visibilityLabel(video.visibility),
+          video.status,
+          video.slug,
+        ].some((value) =>
+          normalizeSearchText(value ?? "").includes(normalizedSearchQuery),
+        ),
+      )
+    : videos;
 
   return (
     <ProfileMenuProvider>
@@ -31,6 +54,7 @@ export default async function VideosPage() {
           <div className="flex min-w-0 flex-1 flex-col overflow-y-auto">
             <Header
               userName={session.user.name ?? session.user.email ?? "User"}
+              searchQuery={searchQuery}
             />
             {/* mainContentSection — `--pagePadding` is read by the tab bar's
                 negative-margin bleed in LibraryTabs; 24px horizontal gutter. */}
@@ -38,7 +62,7 @@ export default async function VideosPage() {
               id="mainContent"
               className="w-full px-[24px] py-[24px] [--pagePadding:24px]"
             >
-              <LibraryView videos={videos} />
+              <LibraryView videos={filteredVideos} searchQuery={searchQuery} />
             </main>
           </div>
         </div>
@@ -47,4 +71,12 @@ export default async function VideosPage() {
       <ProfileMenuOverlay />
     </ProfileMenuProvider>
   );
+}
+
+function getSearchQuery(value: string | string[] | undefined): string {
+  return Array.isArray(value) ? (value[0] ?? "") : (value ?? "");
+}
+
+function normalizeSearchText(value: string): string {
+  return value.trim().toLowerCase();
 }
