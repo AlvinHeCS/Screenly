@@ -11,6 +11,8 @@ export interface WatchRoomProps {
   ownerName: string;
   dateLabel: string;
   dateTime: string;
+  canEditTitle?: boolean;
+  onTitleChange?: (title: string) => Promise<void> | void;
   embedUrl?: string;
   posterMessage?: string;
   transcriptState: "loading" | "ready" | "unavailable" | "waiting";
@@ -35,6 +37,8 @@ export function WatchRoom({
   ownerName,
   dateLabel,
   dateTime,
+  canEditTitle,
+  onTitleChange,
   embedUrl,
   posterMessage,
   transcriptState,
@@ -63,6 +67,8 @@ export function WatchRoom({
             ownerName={ownerName}
             dateLabel={dateLabel}
             dateTime={dateTime}
+            canEditTitle={canEditTitle}
+            onTitleChange={onTitleChange}
           />
 
           <div className="mx-auto w-full max-w-[1280px]">

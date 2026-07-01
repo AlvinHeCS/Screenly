@@ -51,6 +51,7 @@ export function WatchView({
 
   const utils = api.useUtils();
   const syncTranscript = api.video.syncTranscript.useMutation();
+  const updateTitle = api.video.updateTitle.useMutation();
 
   // Stable refs so the polling effect (which only re-subscribes on `pending`)
   // always sees the latest data + mutate fn instead of a stale closure.
@@ -185,15 +186,30 @@ export function WatchView({
     flushPendingSeek();
   }, [attachPlayer, flushPendingSeek]);
 
-  const handleSeek = useCallback((startMs: number) => {
-    const player = attachPlayer();
-    if (!player) {
-      pendingSeekMsRef.current = startMs;
-      return;
-    }
-    pendingSeekMsRef.current = null;
-    seekPlayer(player, startMs);
-  }, [attachPlayer, seekPlayer]);
+  const handleSeek = useCallback(
+    (startMs: number) => {
+      const player = attachPlayer();
+      if (!player) {
+        pendingSeekMsRef.current = startMs;
+        return;
+      }
+      pendingSeekMsRef.current = null;
+      seekPlayer(player, startMs);
+    },
+    [attachPlayer, seekPlayer],
+  );
+
+  const handleTitleChange = useCallback(
+    async (title: string) => {
+      const updated = await updateTitle.mutateAsync({ slug, title });
+      setData((current) => ({
+        ...current,
+        title: updated.title,
+        canEditTitle: true,
+      }));
+    },
+    [slug, updateTitle],
+  );
 
   const openSidebar = useCallback(() => setIsSidebarOpen(true), []);
   const closeSidebar = useCallback(() => setIsSidebarOpen(false), []);
@@ -217,6 +233,8 @@ export function WatchView({
         ownerName={ownerName}
         dateLabel={formatRelativeDate(data.createdAt)}
         dateTime={toIsoDateTime(data.createdAt)}
+        canEditTitle={data.canEditTitle}
+        onTitleChange={handleTitleChange}
         embedUrl={
           isReady
             ? `https://iframe.videodelivery.net/${data.cloudflareUid}`
