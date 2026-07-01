@@ -303,6 +303,44 @@ export const videoRouter = createTRPCRouter({
     }),
 
   /**
+   * Make a video available to anyone with its unguessable slug and return that
+   * slug so the client can build/copy the public /v/{slug} URL.
+   */
+  createShareLink: protectedProcedure
+    .input(z.object({ videoId: z.string().min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      const video = await ctx.db.video.findFirst({
+        where: {
+          id: input.videoId,
+          status: { not: "DELETED" },
+        },
+        select: { id: true, ownerId: true, workspaceId: true },
+      });
+      if (!video) throw new TRPCError({ code: "NOT_FOUND" });
+
+      const canShare =
+        video.ownerId === ctx.session.user.id ||
+        Boolean(
+          await ctx.db.membership.findFirst({
+            where: {
+              userId: ctx.session.user.id,
+              workspaceId: video.workspaceId,
+            },
+            select: { id: true },
+          }),
+        );
+      if (!canShare) throw new TRPCError({ code: "NOT_FOUND" });
+
+      const shared = await ctx.db.video.update({
+        where: { id: video.id },
+        data: { visibility: "LINK" },
+        select: { slug: true, visibility: true },
+      });
+
+      return shared;
+    }),
+
+  /**
    * Step 2: the browser finished POSTing the file to Cloudflare. Flip
    * UPLOADING → PROCESSING. The READY transition comes from the Stream webhook
    * (prod) or `syncStatus` polling (dev).
@@ -432,6 +470,17 @@ export const videoRouter = createTRPCRouter({
       if (!video) throw new TRPCError({ code: "NOT_FOUND" });
       await assertCanView(ctx.db, video, ctx.session?.user?.id ?? null);
 
+      const userId = ctx.session?.user?.id ?? null;
+      const canCreateShareLink = userId
+        ? video.ownerId === userId ||
+          Boolean(
+            await ctx.db.membership.findFirst({
+              where: { userId, workspaceId: video.workspaceId },
+              select: { id: true },
+            }),
+          )
+        : false;
+
       return {
         id: video.id,
         title: video.title,
@@ -440,6 +489,7 @@ export const videoRouter = createTRPCRouter({
         durationSec: video.durationSec,
         createdAt: video.createdAt,
         owner: video.owner,
+        canCreateShareLink,
         transcript: {
           status: video.transcript?.status ?? "PENDING",
           cues: toCues(video.transcript?.cues),

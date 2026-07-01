@@ -25,8 +25,7 @@ interface VideoCardProps {
  * (body grey8 = hsla(228,6%,17%,1), bodyDimmed grey6 = hsla(224,5%,44%,1),
  * blueDark = hsla(216.3,69.2%,23%,1), white = hsla(0,0%,100%,1)).
  *
- * Server component: NO 'use client', NO onClick. The bulk-select checkbox and
- * action buttons are decorative.
+ * Server component: NO 'use client', NO onClick.
  */
 export function VideoCard({ video }: VideoCardProps) {
   const duration = formatDuration(video.durationSec);
@@ -190,9 +189,6 @@ export function VideoCard({ video }: VideoCardProps) {
             reactionCount={video.reactionCount}
           />
         </div>
-
-        {/* css-181vo1z — absolute; bg white; right 16px; bottom 16px; z-index 2 (empty corner). */}
-        <div className="absolute bottom-[16px] right-[16px] z-[2] bg-[hsla(0,0%,100%,1)]" />
       </div>
     </div>
   );

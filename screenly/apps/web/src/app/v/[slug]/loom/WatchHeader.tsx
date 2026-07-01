@@ -2,25 +2,11 @@ import Link from "next/link";
 
 import { ScreenlyLogoIcon } from "~/app/_components/sidebar/icons/ScreenlyLogoIcon";
 
-import { HeaderIconButton } from "./HeaderIconButton";
-import { MainNavIcon } from "./icons/MainNavIcon";
-
-interface WatchHeaderProps {
-  isMainNavOpen?: boolean;
-  mainNavControlsId?: string;
-  onMainNavClick?: () => void;
-}
-
 /**
- * Sticky share-video header: main-nav toggle + logo on the left, then
- * the usage meter, Share split button, actions/search/notifications, and the
- * account avatar on the right.
+ * Sticky public video header. It deliberately avoids signed-in workspace
+ * controls so anyone with the share link can watch without account chrome.
  */
-export function WatchHeader({
-  isMainNavOpen = false,
-  mainNavControlsId,
-  onMainNavClick,
-}: WatchHeaderProps) {
+export function WatchHeader() {
   return (
     <header className="sticky top-0 z-[103] flex h-[56px] items-center gap-[8px] border-b border-[#ececef] bg-white px-[16px]">
       <a
@@ -29,15 +15,6 @@ export function WatchHeader({
       >
         Skip to content
       </a>
-
-      <HeaderIconButton
-        label="Main nav"
-        ariaControls={mainNavControlsId}
-        ariaExpanded={isMainNavOpen}
-        onClick={onMainNavClick}
-      >
-        <MainNavIcon className="h-[16px] w-[16px]" />
-      </HeaderIconButton>
 
       <Link
         href="/"
