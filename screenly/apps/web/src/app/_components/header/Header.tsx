@@ -23,8 +23,8 @@ export function Header({ userName, searchQuery }: HeaderProps) {
     <header className="sticky top-0 z-50 w-full bg-white">
       <div>
         <SkipNavigation />
-        <ul className="flex w-full items-center px-[16px]">
-          <li className="grow py-[8px] md:py-[16px]">
+        <ul className="flex w-full items-center px-[16px] py-[8px] md:py-[16px]">
+          <li className="grow">
             <SearchBar initialQuery={searchQuery} />
           </li>
           <li id="profileBubble" className="ml-[16px]">

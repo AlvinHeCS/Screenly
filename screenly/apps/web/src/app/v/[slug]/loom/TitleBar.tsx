@@ -2,11 +2,15 @@
 
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 
+import { ShareButton } from "./ShareButton";
+
 interface TitleBarProps {
+  videoId: string;
   title: string;
   ownerName: string;
   dateLabel: string;
   dateTime: string;
+  canCreateShareLink: boolean;
   canEditTitle?: boolean;
   onTitleChange?: (title: string) => Promise<void> | void;
 }
@@ -17,10 +21,12 @@ interface TitleBarProps {
  * `titleBarViewsContainer`.
  */
 export function TitleBar({
+  videoId,
   title,
   ownerName,
   dateLabel,
   dateTime,
+  canCreateShareLink,
   canEditTitle = false,
   onTitleChange,
 }: TitleBarProps) {
@@ -140,6 +146,8 @@ export function TitleBar({
           <time dateTime={dateTime}>{dateLabel}</time>
         </div>
       </div>
+
+      <ShareButton videoId={videoId} canCreateShareLink={canCreateShareLink} />
     </div>
   );
 }

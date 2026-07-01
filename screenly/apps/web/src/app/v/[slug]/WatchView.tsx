@@ -3,15 +3,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Script from "next/script";
 
-import type { RouterOutputs } from "~/trpc/react";
+import { Header } from "~/app/_components/header/Header";
+import { ProfileMenuOverlay } from "~/app/_components/profile-menu/ProfileMenuOverlay";
+import { ProfileMenuProvider } from "~/app/_components/profile-menu/ProfileMenuProvider";
 import { RecorderOverlay } from "~/app/_components/recorder/RecorderOverlay";
 import { RecorderProvider } from "~/app/_components/recorder/RecorderProvider";
+import { Sidebar } from "~/app/_components/sidebar/Sidebar";
+import type { RouterOutputs } from "~/trpc/react";
 import { api } from "~/trpc/react";
 import { WatchRoom } from "./loom/WatchRoom";
-import {
-  WATCH_SIDEBAR_DRAWER_ID,
-  WatchSidebarDrawer,
-} from "./loom/WatchSidebarDrawer";
 
 export type WatchData = RouterOutputs["video"]["getBySlug"];
 
@@ -41,13 +41,14 @@ declare global {
 export function WatchView({
   slug,
   initial,
+  viewerName,
 }: {
   slug: string;
   initial: WatchData;
+  viewerName?: string | null;
 }) {
   const [data, setData] = useState<WatchData>(initial);
   const [timedOut, setTimedOut] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const utils = api.useUtils();
   const syncTranscript = api.video.syncTranscript.useMutation();
@@ -211,9 +212,6 @@ export function WatchView({
     [slug, updateTitle],
   );
 
-  const openSidebar = useCallback(() => setIsSidebarOpen(true), []);
-  const closeSidebar = useCallback(() => setIsSidebarOpen(false), []);
-
   const ownerName = data.owner.name ?? "Unknown";
   const transcriptState: "loading" | "ready" | "unavailable" | "waiting" =
     data.status !== "READY"
@@ -225,44 +223,68 @@ export function WatchView({
           ? "unavailable"
           : "loading";
 
+  const streamScript = (
+    <Script src={STREAM_SDK_SRC} onLoad={() => setSdkReady(true)} />
+  );
+  const watchRoom = (
+    <WatchRoom
+      videoId={data.id}
+      title={data.title}
+      ownerName={ownerName}
+      dateLabel={formatRelativeDate(data.createdAt)}
+      dateTime={toIsoDateTime(data.createdAt)}
+      canCreateShareLink={data.canCreateShareLink}
+      canEditTitle={data.canEditTitle}
+      onTitleChange={handleTitleChange}
+      showHeader={!viewerName}
+      embedUrl={
+        isReady
+          ? `https://iframe.videodelivery.net/${data.cloudflareUid}`
+          : undefined
+      }
+      posterMessage={
+        isReady
+          ? undefined
+          : data.status === "ERRORED"
+            ? "This recording failed to process."
+            : "This recording is still processing — hang tight…"
+      }
+      transcriptState={transcriptState}
+      cues={data.transcript.cues.map((cue) => ({
+        startMs: cue.startMs,
+        timestamp: formatTimestamp(cue.startMs),
+        text: cue.text,
+      }))}
+      iframeRef={setIframeRef}
+      onPlayerLoad={handlePlayerLoad}
+      onSeek={handleSeek}
+    />
+  );
+
+  if (viewerName) {
+    return (
+      <ProfileMenuProvider>
+        <RecorderProvider>
+          {streamScript}
+          <div className="flex h-screen overflow-hidden bg-white">
+            <Sidebar />
+            <div className="flex min-w-0 flex-1 flex-col overflow-y-auto">
+              <Header userName={viewerName} />
+              {watchRoom}
+            </div>
+          </div>
+          <RecorderOverlay />
+        </RecorderProvider>
+        <ProfileMenuOverlay />
+      </ProfileMenuProvider>
+    );
+  }
+
   return (
-    <RecorderProvider>
-      <Script src={STREAM_SDK_SRC} onLoad={() => setSdkReady(true)} />
-      <WatchRoom
-        title={data.title}
-        ownerName={ownerName}
-        dateLabel={formatRelativeDate(data.createdAt)}
-        dateTime={toIsoDateTime(data.createdAt)}
-        canEditTitle={data.canEditTitle}
-        onTitleChange={handleTitleChange}
-        embedUrl={
-          isReady
-            ? `https://iframe.videodelivery.net/${data.cloudflareUid}`
-            : undefined
-        }
-        posterMessage={
-          isReady
-            ? undefined
-            : data.status === "ERRORED"
-              ? "This recording failed to process."
-              : "This recording is still processing — hang tight…"
-        }
-        transcriptState={transcriptState}
-        cues={data.transcript.cues.map((cue) => ({
-          startMs: cue.startMs,
-          timestamp: formatTimestamp(cue.startMs),
-          text: cue.text,
-        }))}
-        iframeRef={setIframeRef}
-        onPlayerLoad={handlePlayerLoad}
-        onSeek={handleSeek}
-        isMainNavOpen={isSidebarOpen}
-        mainNavControlsId={WATCH_SIDEBAR_DRAWER_ID}
-        onMainNavClick={openSidebar}
-      />
-      <WatchSidebarDrawer isOpen={isSidebarOpen} onClose={closeSidebar} />
-      <RecorderOverlay />
-    </RecorderProvider>
+    <>
+      {streamScript}
+      {watchRoom}
+    </>
   );
 }
 

@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation";
 
+import { auth } from "@screenly/auth";
+
 import { api } from "~/trpc/server";
 import { WatchView, type WatchData } from "./WatchView";
 
@@ -14,6 +16,7 @@ export default async function WatchPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+  const session = await auth();
 
   let initial: WatchData;
   try {
@@ -22,5 +25,11 @@ export default async function WatchPage({
     notFound();
   }
 
-  return <WatchView slug={slug} initial={initial} />;
+  return (
+    <WatchView
+      slug={slug}
+      initial={initial}
+      viewerName={session?.user?.name ?? session?.user?.email ?? null}
+    />
+  );
 }
