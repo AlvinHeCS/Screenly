@@ -215,13 +215,8 @@ export function WatchView({
       <WatchRoom
         title={data.title}
         ownerName={ownerName}
-        ownerInitials={initialsOf(ownerName)}
-        ownerFirstName={firstNameOf(ownerName)}
         dateLabel={formatRelativeDate(data.createdAt)}
         dateTime={toIsoDateTime(data.createdAt)}
-        viewsLabel="1 view"
-        durationLabel={formatDuration(data.durationSec)}
-        avatarSrc={data.owner.image ?? undefined}
         embedUrl={
           isReady
             ? `https://iframe.videodelivery.net/${data.cloudflareUid}`
@@ -253,14 +248,6 @@ export function WatchView({
   );
 }
 
-function initialsOf(name: string): string {
-  return name.trim().charAt(0).toUpperCase() || "?";
-}
-
-function firstNameOf(name: string): string {
-  return name.trim().split(/\s+/)[0] ?? name;
-}
-
 function toIsoDateTime(date: Date | string): string {
   const d = typeof date === "string" ? new Date(date) : date;
   return d.toISOString();
@@ -284,13 +271,6 @@ function formatRelativeDate(date: Date | string): string {
     return rtf.format(-Math.round(diffMs / hourMs), "hour");
   }
   return rtf.format(-Math.round(diffMs / dayMs), "day");
-}
-
-function formatDuration(durationSec: number | null): string {
-  const total = Math.max(0, Math.floor(durationSec ?? 0));
-  const minutes = Math.floor(total / 60);
-  const seconds = total % 60;
-  return `${minutes}:${String(seconds).padStart(2, "0")}`;
 }
 
 function formatTimestamp(ms: number): string {

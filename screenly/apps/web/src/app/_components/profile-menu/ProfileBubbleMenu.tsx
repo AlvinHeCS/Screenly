@@ -1,8 +1,5 @@
 import { signOutAction } from "./actions";
 import { CloseIcon } from "./icons/CloseIcon";
-import { ProfileBubbleHeader } from "./ProfileBubbleHeader";
-import { ProfileMenuList } from "./ProfileMenuList";
-import { ProfilePlanSummary } from "./ProfilePlanSummary";
 
 interface ProfileBubbleMenuProps {
   onClose: () => void;
@@ -13,8 +10,7 @@ interface ProfileBubbleMenuProps {
  * as a 320px white popover card (`--lns-radius-large` 16px, `--lns-color-border`,
  * `--lns-shadow-large`). Stacks: the close button (`button[aria-label="Close"]`,
  * top-right, reusing the resolved `.css-1q1s5qm` 32px icon-button rule), the
- * header (avatar/name/edit), the plan summary, the 5-item nav list and the
- * Sign Out row — sections split by `--lns-color-border` dividers.
+ * Sign Out row.
  */
 export function ProfileBubbleMenu({ onClose }: ProfileBubbleMenuProps) {
   return (
@@ -28,14 +24,7 @@ export function ProfileBubbleMenu({ onClose }: ProfileBubbleMenuProps) {
         <CloseIcon className="h-[16px] w-[16px]" />
       </button>
 
-      <ProfileBubbleHeader />
-      <ProfilePlanSummary />
-
-      <div className="mt-[12px] border-t border-[hsla(225.5,57%,10%,0.14)] px-[8px] pt-[8px]">
-        <ProfileMenuList />
-      </div>
-
-      <div className="mt-[8px] border-t border-[hsla(225.5,57%,10%,0.14)] px-[8px] pt-[8px]">
+      <div className="mt-[44px] px-[8px] pt-[8px]">
         <form action={signOutAction}>
           <button
             type="submit"

@@ -32,47 +32,16 @@ export function LibraryTabs({ videoCount }: LibraryTabsProps) {
           aria-label="Library"
           className="flex gap-[16px] overflow-auto pl-[var(--pagePadding)] [--activeIndicatorHeight:3px] [scrollbar-width:none] after:w-[var(--pagePadding)] after:shrink-0 after:content-[''] [&::-webkit-scrollbar]:hidden"
         >
-          {/* css-iodqv7 (active tab) */}
-          <button
-            type="button"
+          <a
+            href="/videos"
             role="tab"
             aria-selected={true}
-            tabIndex={0}
+            aria-current="page"
             className="relative inline-flex shrink-0 cursor-pointer appearance-none items-center justify-center whitespace-nowrap rounded-[8px] border-0 bg-transparent px-0 pb-[11px] pt-0 align-middle font-sans text-[14px] font-[500] leading-[1.57] text-[hsla(228,6%,17%,1)] no-underline transition-[color] duration-[0.6s] after:absolute after:bottom-0 after:h-[var(--activeIndicatorHeight)] after:w-full after:rounded-none after:bg-[hsla(215.4,80%,47.65%,1)] after:content-[''] hover:text-[hsla(228,6%,17%,1)] focus:outline focus:outline-1 focus:outline-transparent focus-visible:shadow-[inset_0_0_0_2px_hsla(216.1,81.4%,60%,1)]"
           >
-            <a aria-current="page" tabIndex={-1} href="/looms/videos">
-              {/* pt:small pb:small block */}
-              <span className="block pb-[8px] pt-[8px]">Videos</span>
-            </a>
-          </button>
-
-          {/* css-1ve0qel (unselected tab) */}
-          <button
-            type="button"
-            role="tab"
-            aria-selected={false}
-            tabIndex={-1}
-            className="relative inline-flex shrink-0 cursor-pointer appearance-none items-center justify-center whitespace-nowrap rounded-[8px] border-0 bg-transparent px-0 pb-[11px] pt-0 align-middle font-sans text-[14px] font-[500] leading-[1.57] text-[hsla(224,5%,44%,1)] no-underline transition-[color] duration-[0.6s] after:absolute after:bottom-0 after:h-[var(--activeIndicatorHeight)] after:w-full after:rounded-none after:content-[''] hover:text-[hsla(228,6%,17%,1)] focus:outline focus:outline-1 focus:outline-transparent focus-visible:shadow-[inset_0_0_0_2px_hsla(216.1,81.4%,60%,1)]"
-          >
-            <a tabIndex={-1} href="/looms/screenshots">
-              {/* pt:small pb:small block */}
-              <span className="block pb-[8px] pt-[8px]">Screenshots</span>
-            </a>
-          </button>
-
-          {/* css-1ve0qel (unselected tab) */}
-          <button
-            type="button"
-            role="tab"
-            aria-selected={false}
-            tabIndex={-1}
-            className="relative inline-flex shrink-0 cursor-pointer appearance-none items-center justify-center whitespace-nowrap rounded-[8px] border-0 bg-transparent px-0 pb-[11px] pt-0 align-middle font-sans text-[14px] font-[500] leading-[1.57] text-[hsla(224,5%,44%,1)] no-underline transition-[color] duration-[0.6s] after:absolute after:bottom-0 after:h-[var(--activeIndicatorHeight)] after:w-full after:rounded-none after:content-[''] hover:text-[hsla(228,6%,17%,1)] focus:outline focus:outline-1 focus:outline-transparent focus-visible:shadow-[inset_0_0_0_2px_hsla(216.1,81.4%,60%,1)]"
-          >
-            <a tabIndex={-1} href="/looms/archive">
-              {/* pt:small pb:small block */}
-              <span className="block pb-[8px] pt-[8px]">Archive</span>
-            </a>
-          </button>
+            {/* pt:small pb:small block */}
+            <span className="block pb-[8px] pt-[8px]">Videos</span>
+          </a>
         </div>
       </div>
 

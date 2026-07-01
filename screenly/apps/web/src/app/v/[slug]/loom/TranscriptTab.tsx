@@ -26,13 +26,6 @@ export function TranscriptTab({ state, cues, onSeek }: TranscriptTabProps) {
         <span className="text-[13px] font-semibold leading-[20px] text-[#6a6a73]">
           Transcript
         </span>
-        <button
-          type="button"
-          disabled
-          className="hidden cursor-not-allowed rounded-[8px] border border-[#d9d9de] px-[12px] py-[6px] text-[13px] font-semibold leading-[18px] text-[#8a8a93] sm:inline-flex"
-        >
-          Download
-        </button>
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-[16px] py-[12px]">

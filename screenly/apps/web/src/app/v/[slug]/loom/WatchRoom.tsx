@@ -9,17 +9,10 @@ import type { TranscriptCue } from "./TranscriptTab";
 export interface WatchRoomProps {
   title: string;
   ownerName: string;
-  ownerInitials: string;
-  ownerFirstName: string;
   dateLabel: string;
   dateTime: string;
-  viewsLabel: string;
-  durationLabel: string;
   embedUrl?: string;
   posterMessage?: string;
-  avatarSrc?: string;
-  usageLabel?: string;
-  notificationsLabel?: string;
   transcriptState: "loading" | "ready" | "unavailable" | "waiting";
   cues: TranscriptCue[];
   /** Forwarded to the player iframe so the parent can drive seeks. */
@@ -40,17 +33,10 @@ export interface WatchRoomProps {
 export function WatchRoom({
   title,
   ownerName,
-  ownerInitials,
-  ownerFirstName,
   dateLabel,
   dateTime,
-  viewsLabel,
-  durationLabel,
   embedUrl,
   posterMessage,
-  avatarSrc,
-  usageLabel = "20/25 videos",
-  notificationsLabel = "9+",
   transcriptState,
   cues,
   iframeRef,
@@ -63,11 +49,6 @@ export function WatchRoom({
   return (
     <main className="min-h-screen bg-white text-[#1d1c20]">
       <WatchHeader
-        usageLabel={usageLabel}
-        notificationsLabel={notificationsLabel}
-        avatarSrc={avatarSrc}
-        avatarAlt={ownerName}
-        avatarInitials={ownerInitials}
         isMainNavOpen={isMainNavOpen}
         mainNavControlsId={mainNavControlsId}
         onMainNavClick={onMainNavClick}
@@ -82,7 +63,6 @@ export function WatchRoom({
             ownerName={ownerName}
             dateLabel={dateLabel}
             dateTime={dateTime}
-            viewsLabel={viewsLabel}
           />
 
           <div className="mx-auto w-full max-w-[1280px]">
@@ -90,7 +70,6 @@ export function WatchRoom({
               <VideoFrame
                 embedUrl={embedUrl}
                 title={title}
-                durationLabel={durationLabel}
                 posterMessage={posterMessage}
                 iframeRef={iframeRef}
                 onPlayerLoad={onPlayerLoad}
@@ -100,7 +79,6 @@ export function WatchRoom({
         </section>
 
         <RightPanel
-          ownerFirstName={ownerFirstName}
           transcriptState={transcriptState}
           cues={cues}
           onSeek={onSeek}

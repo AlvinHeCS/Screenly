@@ -39,8 +39,10 @@ export function visibilityLabel(visibility: LibraryVisibility): string {
 /** Up to two-letter initials for the avatar fallback. */
 export function initials(name: string | null): string {
   if (!name) return "?";
-  const parts = name.trim().split(/\s+/);
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0]?.slice(0, 2).toUpperCase() ?? "?";
   const first = parts[0]?.[0] ?? "";
-  const last = parts.length > 1 ? (parts[parts.length - 1]?.[0] ?? "") : "";
+  const last = parts[parts.length - 1]?.[0] ?? "";
   return (first + last).toUpperCase() || "?";
 }
