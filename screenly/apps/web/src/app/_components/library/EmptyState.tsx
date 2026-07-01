@@ -1,5 +1,6 @@
 /**
- * Empty state for the Loom Library grid, shown when there are no videos.
+ * Empty state for the Loom Library grid, shown when there are no videos or no
+ * search results.
  *
  * There is NO empty-state markup in the source HTML (the captured page had 18
  * videos), so this is designed to be consistent with the page tokens from
@@ -13,14 +14,18 @@
  *
  * Server component: no handlers, no state.
  */
-export function EmptyState() {
+export function EmptyState({ searchQuery }: { searchQuery?: string }) {
+  const hasSearchQuery = Boolean(searchQuery?.trim());
+
   return (
     <div className="flex min-h-[240px] flex-col items-center justify-center gap-[8px] rounded-[8px] border border-dashed border-[hsla(225.5,57%,10%,0.14)] px-[24px] py-[40px] text-center">
       <h3 className="block text-[18px] font-[653] leading-[1.44] tracking-[-0.2px] text-[hsla(228,6%,17%,1)]">
-        No videos yet
+        {hasSearchQuery ? "No matching videos" : "No videos yet"}
       </h3>
       <p className="block text-[14px] font-[400] leading-[1.57] text-[hsla(224,5%,44%,1)]">
-        Record or upload a video and it will show up here.
+        {hasSearchQuery
+          ? "Try searching for a different title, owner, or sharing status."
+          : "Record or upload a video and it will show up here."}
       </p>
     </div>
   );
